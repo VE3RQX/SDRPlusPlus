@@ -33,7 +33,7 @@ namespace wav {
 
     Writer::~Writer() { close(); }
 
-    bool Writer::open(std::string path) {
+    bool Writer::open(std::string path, std::function<void(riff::Writer &)> list_info) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         // Close previous file
         if (rw.isOpen()) { close(); }
@@ -76,10 +76,15 @@ namespace wav {
         rw.write((uint8_t*)&hdr, sizeof(FormatHeader));
         rw.endChunk();
 
+        list_info(rw);
+
         // Begin data chunk
         rw.beginChunk(DATA_MARKER);
         
         return true;
+    }
+    bool Writer::open(std::string path) {
+        return open(path, [&](riff::Writer &) { });
     }
 
     bool Writer::isOpen() {

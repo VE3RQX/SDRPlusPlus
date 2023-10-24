@@ -3,6 +3,7 @@
 #include <fstream>
 #include <stdint.h>
 #include <mutex>
+#include <functional>
 #include "riff.h"
 
 namespace wav {    
@@ -39,6 +40,7 @@ namespace wav {
         Writer(int channels = 2, uint64_t samplerate = 48000, Format format = FORMAT_WAV, SampleType type = SAMP_TYPE_INT16);
         ~Writer();
 
+        bool open(std::string path, std::function<void(riff::Writer &)> list_info);
         bool open(std::string path);
         bool isOpen();
         void close();

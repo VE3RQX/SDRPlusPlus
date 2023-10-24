@@ -22,6 +22,9 @@
 #include <utils/optionlist.h>
 #include <utils/wav.h>
 #include <radio_interface.h>
+#include <version.h>
+
+#include <stdarg.h>
 
 #define CONCAT(a, b) ((std::string(a) + b).c_str())
 
@@ -42,7 +45,7 @@ public:
     RecorderModule(std::string name) : folderSelect("%ROOT%/recordings") {
         this->name = name;
         root = (std::string)core::args["root"];
-        strcpy(nameTemplate, "$t_$f_$h-$m-$s_$d-$M-$y");
+        strcpy(nameTemplate, "$t/$y-$M-$d/$h$m$s_$f");
 
         // Define option lists
         containers.define("WAV", wav::FORMAT_WAV);
@@ -168,11 +171,34 @@ public:
         writer.setSamplerate(samplerate);
 
         // Open file
-        std::string type = (recMode == RECORDER_MODE_AUDIO) ? "audio" : "baseband";
-        std::string vfoName = (recMode == RECORDER_MODE_AUDIO) ? selectedStreamName : "";
+        std::string stream_type = (recMode == RECORDER_MODE_AUDIO) ? "audio" : "baseband";
+        std::string stream_name = (recMode == RECORDER_MODE_AUDIO) ? selectedStreamName : "";
         std::string extension = ".wav";
-        std::string expandedPath = expandString(folderSelect.path + "/" + genFileName(nameTemplate, type, vfoName) + extension);
-        if (!writer.open(expandedPath)) {
+
+        Metadata metadata(stream_type, stream_name);
+
+        std::string expandedPath = expandString(folderSelect.path + "/" + metadata.genFileName(nameTemplate) + extension);
+
+        {
+            size_t endOfPath = expandedPath.rfind('/');
+
+            if(endOfPath != std::string::npos) {
+                std::string path(expandedPath, 0, endOfPath);
+
+                try {
+                    std::filesystem::create_directories(path);
+                } catch(const std::exception &e) {
+                    flog::error("Failed to create path: {0}", e.what());
+                    return;
+                }
+            }
+        }
+
+        auto list_info = [&](riff::Writer &rw) {
+            metadata.genListInfo(rw);
+        };
+
+        if (!writer.open(expandedPath, list_info)) {
             flog::error("Failed to open file for recording: {0}", expandedPath);
             return;
         }
@@ -438,61 +464,174 @@ private:
         if (dbLvl.r > lvl.r) { lvl.r = dbLvl.r; }
     }
 
-    std::map<int, const char*> radioModeToString = {
-        { RADIO_IFACE_MODE_NFM, "NFM" },
-        { RADIO_IFACE_MODE_WFM, "WFM" },
-        { RADIO_IFACE_MODE_AM,  "AM"  },
-        { RADIO_IFACE_MODE_DSB, "DSB" },
-        { RADIO_IFACE_MODE_USB, "USB" },
-        { RADIO_IFACE_MODE_CW,  "CW"  },
-        { RADIO_IFACE_MODE_LSB, "LSB" },
-        { RADIO_IFACE_MODE_RAW, "RAW" }
+    struct Metadata {
+
+        struct {
+            std::string type;
+            std::string name;
+        } stream;
+
+        char    year[128], month[128],  day[128];
+        char    hour[128], minute[128], second[128];
+
+        char    frequency[128];
+        char    mode[128];
+        char    bandwidth[128];
+
+        Metadata(std::string stream_type, std::string stream_name)
+        {
+            stream.type = stream_type;
+            stream.name = stream_name;
+
+            time_t    now = time(0);
+            tm    *utc = gmtime(&now);
+
+            sprintf(year,   "%04d", utc->tm_year + 1900);
+            sprintf(month,  "%02d", utc->tm_mon + 1);
+            sprintf(day,    "%02d", utc->tm_mday);
+            sprintf(hour,   "%02d", utc->tm_hour);
+            sprintf(minute, "%02d", utc->tm_min);
+            sprintf(second, "%02d", utc->tm_sec);
+
+            double freq = gui::waterfall.getCenterFrequency();
+
+            if (gui::waterfall.vfos.find(stream.name) != gui::waterfall.vfos.end())
+                freq += gui::waterfall.vfos[stream.name]->generalOffset;
+
+            sprintf(frequency, "%011.0lf", freq);
+
+            if (core::modComManager.getModuleName(stream.name) != "radio") {
+                sprintf(mode, "%s", "unknown");
+                sprintf(bandwidth, "%s", "unknown");
+                return;
+            }
+
+            static std::map<int, const char*> radioModeToString = {
+                { RADIO_IFACE_MODE_NFM, "NFM" },
+                { RADIO_IFACE_MODE_WFM, "WFM" },
+                { RADIO_IFACE_MODE_AM,  "AM"  },
+                { RADIO_IFACE_MODE_DSB, "DSB" },
+                { RADIO_IFACE_MODE_USB, "USB" },
+                { RADIO_IFACE_MODE_CW,  "CW"  },
+                { RADIO_IFACE_MODE_LSB, "LSB" },
+                { RADIO_IFACE_MODE_RAW, "RAW" }
+            };
+            int m;
+
+            core::modComManager.callInterface(stream.name, RADIO_IFACE_CMD_GET_MODE, NULL, &m);
+
+            auto    i = radioModeToString.find(m);
+
+            if(i != radioModeToString.end())
+                sprintf(mode, "%s", i->second);
+            else
+                sprintf(mode, "unknown(%d)", m);
+
+            //
+            // bandwidth
+            //
+            float bw;
+
+            core::modComManager.callInterface(stream.name, RADIO_IFACE_CMD_GET_BANDWIDTH, NULL, &bw);
+            sprintf(bandwidth, "%.0f", bw);
+        }
+
+        std::string
+        genFileName(std::string templ)
+        {
+            templ = std::regex_replace(templ, std::regex("\\$t"), stream.type);
+            templ = std::regex_replace(templ, std::regex("\\$f"), frequency);
+            templ = std::regex_replace(templ, std::regex("\\$h"), hour);
+            templ = std::regex_replace(templ, std::regex("\\$m"), minute);
+            templ = std::regex_replace(templ, std::regex("\\$s"), second);
+            templ = std::regex_replace(templ, std::regex("\\$d"), day);
+            templ = std::regex_replace(templ, std::regex("\\$M"), month);
+            templ = std::regex_replace(templ, std::regex("\\$y"), year);
+            templ = std::regex_replace(templ, std::regex("\\$r"), mode);
+            templ = std::regex_replace(templ, std::regex("\\$b"), bandwidth);
+            return templ;
+        }
+
+        static void
+        genInfoChunk(riff::Writer &rw, const char *fourcc, const char *format, ...)
+        {
+            int      n;
+            char    *meta;
+            size_t   meta_size;
+            va_list  ap;
+
+            //
+            // ask the formatter how much space we need
+            //
+            va_start(ap, format);
+            n = vsnprintf(nullptr, 0, format, ap);
+            va_end(ap);
+
+            //
+            // ,,, is this really the best we can do?
+            //
+            if (n < 0)
+                return;
+
+            //
+            // the 'message' needs a <NUL>, and an
+            // even length
+            //
+            meta_size = size_t(n + 1 + ((n & 1) == 0));
+
+            //
+            // format the message
+            //
+            meta = new char[meta_size];
+
+            va_start(ap, format);
+            n = vsnprintf(meta, meta_size, format, ap);
+            va_end(ap);
+
+            //
+            // ,,, see above;  we need a better recovery than this
+            //
+            if (n < 0) {
+                delete[] meta;
+                return;
+            }
+
+            //
+            // we need one or two <NUL>'s;  vsnprintf()
+            // gives us one, the following fills in the
+            // other (if needed)
+            //
+            meta[meta_size - 1] = 0x00;
+
+            //
+            // to the stream
+            //
+            rw.beginChunk(fourcc);
+            rw.write((const uint8_t *)meta, meta_size);
+            rw.endChunk();
+
+            delete[] meta;
+        }
+
+        void
+        genChunks(riff::Writer &rw) const
+        {
+            genInfoChunk(rw, "ICRD", "%s-%s-%s", year, month, day);
+            genInfoChunk(rw, "ICMT", "Started: %s-%s-%sT%s:%s:%s Frequency: %sHz Mode: %s Bandwidth: %sHz",
+                year, month, day,
+                hour, minute, second,
+                frequency, mode, bandwidth);
+            genInfoChunk(rw, "ISFT", "SDR++ v%s (Built at %s, %s)", VERSION_STR, __TIME__, __DATE__);
+        }
+
+        void
+        genListInfo(riff::Writer &rw) const
+        {
+            rw.beginChunk("LIST");
+            genChunks(rw);
+            rw.endChunk();
+        }
     };
-
-    std::string genFileName(std::string templ, std::string type, std::string name) {
-        // Get data
-        time_t now = time(0);
-        tm* ltm = localtime(&now);
-        char buf[1024];
-        double freq = gui::waterfall.getCenterFrequency();
-        if (gui::waterfall.vfos.find(name) != gui::waterfall.vfos.end()) {
-            freq += gui::waterfall.vfos[name]->generalOffset;
-        }
-
-        // Format to string
-        char freqStr[128];
-        char hourStr[128];
-        char minStr[128];
-        char secStr[128];
-        char dayStr[128];
-        char monStr[128];
-        char yearStr[128];
-        const char* modeStr = "Unknown";
-        sprintf(freqStr, "%.0lfHz", freq);
-        sprintf(hourStr, "%02d", ltm->tm_hour);
-        sprintf(minStr, "%02d", ltm->tm_min);
-        sprintf(secStr, "%02d", ltm->tm_sec);
-        sprintf(dayStr, "%02d", ltm->tm_mday);
-        sprintf(monStr, "%02d", ltm->tm_mon + 1);
-        sprintf(yearStr, "%02d", ltm->tm_year + 1900);
-        if (core::modComManager.getModuleName(name) == "radio") {
-            int mode;
-            core::modComManager.callInterface(name, RADIO_IFACE_CMD_GET_MODE, NULL, &mode);
-            modeStr = radioModeToString[mode];
-        }
-
-        // Replace in template
-        templ = std::regex_replace(templ, std::regex("\\$t"), type);
-        templ = std::regex_replace(templ, std::regex("\\$f"), freqStr);
-        templ = std::regex_replace(templ, std::regex("\\$h"), hourStr);
-        templ = std::regex_replace(templ, std::regex("\\$m"), minStr);
-        templ = std::regex_replace(templ, std::regex("\\$s"), secStr);
-        templ = std::regex_replace(templ, std::regex("\\$d"), dayStr);
-        templ = std::regex_replace(templ, std::regex("\\$M"), monStr);
-        templ = std::regex_replace(templ, std::regex("\\$y"), yearStr);
-        templ = std::regex_replace(templ, std::regex("\\$r"), modeStr);
-        return templ;
-    }
 
     std::string expandString(std::string input) {
         input = std::regex_replace(input, std::regex("%ROOT%"), root);
@@ -625,3 +764,4 @@ MOD_EXPORT void _END_() {
     config.disableAutoSave();
     config.save();
 }
+
