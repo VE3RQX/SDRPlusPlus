@@ -105,12 +105,24 @@ int sdrpp_main(int argc, char* argv[]) {
 
     // ======== DEFAULT CONFIG ========
     json defConfig;
+    defConfig["bandColors"]["CW"] = "#FF0000FF";
+    defConfig["bandColors"]["USB"] = "#00FF00FF";
+    defConfig["bandColors"]["LSB"] = "#00FF00FF";
+    defConfig["bandColors"]["SSTV"] = "#FF00FFFF";
+    defConfig["bandColors"]["DG"] = "#FF00FFFF";
+    defConfig["bandColors"]["FM"] = "#ffff00ff";
+    defConfig["bandColors"]["beacon"] = "#0000ffff";
+    defConfig["bandColors"]["satellite"] = "#007f7fff";
     defConfig["bandColors"]["amateur"] = "#FF0000FF";
     defConfig["bandColors"]["aviation"] = "#00FF00FF";
     defConfig["bandColors"]["broadcast"] = "#0000FFFF";
     defConfig["bandColors"]["marine"] = "#00FFFFFF";
     defConfig["bandColors"]["military"] = "#FFFF00FF";
+    defConfig["bandColors"]["fixed"] = "#007f007F";
+    defConfig["bandColors"]["time_signal"] = "#7f007f7f";
+    defConfig["bandColors"]["research"] = "#7f7f007f";
     defConfig["bandPlan"] = "General";
+    defConfig["subBandPlan"] = "";
     defConfig["bandPlanEnabled"] = true;
     defConfig["bandPlanPos"] = 0;
     defConfig["centerTuning"] = false;
@@ -126,7 +138,7 @@ int sdrpp_main(int argc, char* argv[]) {
     defConfig["fftRate"] = 20;
     defConfig["fftSize"] = 65536;
     defConfig["fftWindow"] = 2;
-    defConfig["frequency"] = 100000000.0;
+    defConfig["frequency"] = 10000000.0;
     defConfig["fullWaterfallUpdate"] = false;
     defConfig["max"] = 0.0;
     defConfig["maximized"] = false;

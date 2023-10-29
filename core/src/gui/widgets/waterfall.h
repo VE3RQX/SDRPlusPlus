@@ -181,7 +181,7 @@ namespace ImGui {
         bool centerFreqMoved = false;
         bool vfoFreqChanged = false;
         bool bandplanEnabled = false;
-        bandplan::BandPlan_t* bandplan = NULL;
+        bandplan::BandPlan_t *bandplan[2] = { nullptr, nullptr };
 
         bool mouseInFFTResize = false;
         bool mouseInFreq = false;
@@ -249,6 +249,7 @@ namespace ImGui {
         void drawWaterfall();
         void drawFFT();
         void drawVFOs();
+        void drawBandPlanRow(bandplan::BandPlan_t *plan, int row);
         void drawBandPlan();
         void processInputs();
         void onPositionChange();

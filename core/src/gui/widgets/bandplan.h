@@ -2,15 +2,41 @@
 #include <json.hpp>
 #include <imgui/imgui.h>
 #include <stdint.h>
+#include <iostream>
 
 using nlohmann::json;
 
 namespace bandplan {
+
     struct Band_t {
         std::string name;
         std::string type;
         double start;
         double end;
+    };
+
+    struct label_t {
+
+        label_t(const Band_t *b)
+            : name(b->name),
+              type(b->type)
+        {
+        }
+
+        std::string name;
+        std::string type;
+    };
+
+    struct bar_t {
+
+        bar_t(double start, double end)
+            : start(start), end(end)
+        {
+        }
+
+        double start;
+        double end;
+        std::vector<label_t> labels;
     };
 
     void to_json(json& j, const Band_t& b);
@@ -23,6 +49,9 @@ namespace bandplan {
         std::string authorName;
         std::string authorURL;
         std::vector<Band_t> bands;
+	std::vector<bar_t> bars;
+
+        void compile_bars();
     };
 
     void to_json(json& j, const BandPlan_t& b);

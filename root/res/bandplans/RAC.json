@@ -1,0 +1,96 @@
+{
+  "name": "RAC",
+  "country_name": "RAC",
+  "country_code": "CA.RAC",
+  "author_name": "Radio Amateurs of Canada",
+  "author_url": "https://rac.ca",
+  "bands": [
+    { "name": "CW",    "type": "CW",      "start":   135700, "end":   137400 },
+    { "name": "DG",    "type": "DG",      "start":   137400, "end":   137600 },
+    { "name": "QRSS",  "type": "QRSS",    "start":   137600, "end":   137800 },
+
+    { "name": "CW",    "type": "CW",      "start":   472000, "end":   479000 },
+    { "name": "DG",    "type": "DG",      "start":   475000, "end":   479000 },
+
+    { "name": "CW",    "type": "CW",      "start":  1800000, "end":  1840000 },
+    { "name": "DG",    "type": "DG",      "start":  1800000, "end":  1810000 },
+    { "name": "LSB",   "type": "LSB",     "start":  1840000, "end":  2000000 },
+
+    { "name": "CW",    "type": "CW",      "start":  3500000, "end":  3580000 },
+    { "name": "DG",    "type": "DG",      "start":  3580000, "end":  3583000 },
+    { "name": "CW",    "type": "CW",      "start":  3583000, "end":  3589000 },
+    { "name": "DG",    "type": "DG",      "start":  3589000, "end":  3600000 },
+    { "name": "LSB",   "type": "LSB",     "start":  3560000, "end":  3842000 },
+    { "name": "SSTV",  "type": "SSTV",    "start":  3842000, "end":  3845000 },
+    { "name": "LSB",   "type": "LSB",     "start":  3845000, "end":  4000000 },
+
+    { "name": "CW",    "type": "CW",      "start":  5330600, "end":  5333400 },
+    { "name": "USB",   "type": "USB",     "start":  5330600, "end":  5333400 },
+    { "name": "DG",    "type": "DG",      "start":  5330600, "end":  5333400 },
+
+    { "name": "CW",    "type": "CW",      "start":  5346600, "end":  5349400 },
+    { "name": "USB",   "type": "USB",     "start":  5346600, "end":  5349400 },
+    { "name": "DG",    "type": "DG",      "start":  5346600, "end":  5349400 },
+
+    { "name": "CW",    "type": "CW",      "start":  5351500, "end":  5366500 },
+    { "name": "USB",   "type": "USB",     "start":  5351500, "end":  5366500 },
+    { "name": "DG",    "type": "DG",      "start":  5351500, "end":  5366500 },
+
+    { "name": "CW",    "type": "CW",      "start":  5371600, "end":  5374400 },
+    { "name": "USB",   "type": "USB",     "start":  5371600, "end":  5374400 },
+    { "name": "DG",    "type": "DG",      "start":  5371600, "end":  5374400 },
+
+    { "name": "CW",    "type": "CW",      "start":  5403600, "end":  5406400 },
+    { "name": "USB",   "type": "USB",     "start":  5403600, "end":  5406400 },
+    { "name": "DG",    "type": "DG",      "start":  5403600, "end":  5406400 },
+
+    { "name": "CW",    "type": "CW",      "start":  7000000, "end":  7040000 },
+    { "name": "DG",    "type": "DG",      "start":  7035000, "end":  7040000 },
+    { "name": "DG",    "type": "DG",      "start":  7070000, "end":  7125000 },
+    { "name": "LSB",   "type": "LSB",     "start":  7040000, "end":  7165000 },
+    { "name": "SSTV",  "type": "SSTV",    "start":  7165000, "end":  7175000 },
+    { "name": "LSB",   "type": "LSB",     "start":  7175000, "end":  7300000 },
+
+    { "name": "CW",    "type": "CW",      "start": 10100000, "end": 10130000 },
+    { "name": "DG",    "type": "DG",      "start": 10130000, "end": 10150000 },
+    { "name": "CW",    "type": "CW",      "start": 10140000, "end": 10150000 },
+
+    { "name": "CW",    "type": "CW",      "start": 14000000, "end": 14070000 },
+    { "name": "DG",    "type": "DG",      "start": 14070000, "end": 14112000 },
+    { "name": "CW",    "type": "CW",      "start": 14073000, "end": 14100500 },
+    { "name": "USB",   "type": "USB",     "start": 14112000, "end": 14230000 },
+    { "name": "SSTV",  "type": "SSTV",    "start": 14230000, "end": 14236000 },
+    { "name": "USB",   "type": "USB",     "start": 14236000, "end": 14350000 },
+
+    { "name": "CW",    "type": "CW",      "start": 18068000, "end": 18100000 },
+    { "name": "DG",    "type": "DG",      "start": 18068000, "end": 18100000 },
+    { "name": "USB",   "type": "USB",     "start": 18110000, "end": 18168000 },
+
+    { "name": "CW",    "type": "CW",      "start": 21000000, "end": 21080000 },
+    { "name": "DG",    "type": "DG",      "start": 21070000, "end": 21125000 },
+    { "name": "CW",    "type": "CW",      "start": 21083000, "end": 21090000 },
+    { "name": "CW",    "type": "CW",      "start": 21125000, "end": 21150000 },
+    { "name": "USB",   "type": "USB",     "start": 21150000, "end": 21340000 },
+    { "name": "SSTV",  "type": "SSTV",    "start": 21340000, "end": 21343000 },
+    { "name": "USB",   "type": "USB",     "start": 21343000, "end": 21450000 },
+
+    
+    { "name": "CW",    "type": "CW",      "start": 24890000, "end": 24920000 },
+    { "name": "DG",    "type": "DG",      "start": 24920000, "end": 24940000 },
+    { "name": "CW",    "type": "CW",      "start": 24925000, "end": 24940000 },
+    { "name": "USB",   "type": "USB",     "start": 24940000, "end": 24975000 },
+    { "name": "SSTV",  "type": "SSTV",    "start": 24975000, "end": 24978000 },
+    { "name": "USB",   "type": "USB",     "start": 24978000, "end": 24990000 },
+
+    { "name": "CW",    "type": "CW",      "start": 28000000, "end": 28189500 },
+    { "name": "DG",    "type": "DG",      "start": 28070000, "end": 28189500 },
+    { "name": "Beacon","type": "beacon",  "start": 28189500, "end": 28300000 },
+    { "name": "CW",    "type": "CW",      "start": 28200500, "end": 28320000 },
+    { "name": "DG",    "type": "DG",      "start": 28300000, "end": 28320000 },
+    { "name": "USB",   "type": "USB",     "start": 28320000, "end": 28680000 },
+    { "name": "SSTV",  "type": "SSTV",    "start": 28680000, "end": 28683000 },
+    { "name": "USB",   "type": "USB",     "start": 28683000, "end": 29300000 },
+    { "name": "Satellite", "type": "satellite", "start": 29300000, "end": 29520000 },
+    { "name": "FM",    "type": "FM",      "start": 29520000, "end": 29700000 }
+  ]
+}

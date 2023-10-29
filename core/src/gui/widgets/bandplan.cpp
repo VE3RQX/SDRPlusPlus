@@ -111,4 +111,87 @@ namespace bandplan {
     void loadColorTable(json table) {
         colorTable = table.get<std::map<std::string, BandPlanColor_t>>();
     }
+
+    void BandPlan_t::compile_bars() {
+
+        if(!bars.empty())
+            return;
+
+        //
+        // determine all the edges
+        //
+        struct edge_t {
+
+            edge_t(bool open, const Band_t &b)
+                : open(open),
+                  frequency(open ? b.start : b.end),
+                  band(&b)
+            {
+            }
+
+            bool      open;
+            double    frequency;
+        const Band_t *band;
+
+            bool
+            operator<(const edge_t &e) const
+            {
+                return frequency < e.frequency;
+            }
+        };
+        std::vector<edge_t> edges;
+
+        for(auto &b : bands) {
+            edges.push_back(edge_t( true, b));
+            edges.push_back(edge_t(false, b));
+        }
+        std::sort(edges.begin(), edges.end());
+
+        //
+        // between each edge is a stack of rectangles;  this
+        // keeps track of which ones are on or off
+        //
+        std::vector<const Band_t *> active;
+
+        for(size_t k = 0; k < edges.size(); ) {	// note: the ++k is done below
+            //
+            // update active bars at each distinct edge
+            //
+            size_t    b = k;
+
+            while(k < edges.size() && edges[b].frequency == edges[k].frequency) {
+                if(!edges[k].open) {
+                    for(size_t l = 0; l < active.size(); ++l) {
+                        if(active[l] == edges[k].band) {
+                            active[l] = nullptr;
+                            break;
+                        }
+                    }
+                } else {
+                    for(size_t l = 0; l <= active.size(); ++l) {
+                        if(l == active.size()) {
+                            active.push_back(edges[k].band);
+                            break;
+                        }
+                        if(active[l] == nullptr) {
+                            active[l] = edges[k].band;
+                            break;
+                        }
+                    }
+                }
+                ++k;
+            }
+
+            //
+            // the stack of rectangles is a "bar"
+            //
+            if(!active.empty() && k < edges.size()) {
+                bars.push_back(bar_t(edges[b].frequency, edges[k].frequency));
+
+                for(const auto &a : active)
+                    if(a != nullptr)
+                        bars.back().labels.push_back(label_t(a));
+            }
+        }
+    }
 };

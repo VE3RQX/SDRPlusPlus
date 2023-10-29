@@ -7,6 +7,7 @@
 #include <utils/flog.h>
 #include <gui/gui.h>
 #include <gui/style.h>
+#include <iostream>
 
 float DEFAULT_COLOR_MAP[][3] = {
     { 0x00, 0x00, 0x20 },
@@ -603,28 +604,35 @@ namespace ImGui {
         waterfallUpdate = true;
     }
 
-    void WaterFall::drawBandPlan() {
-        int count = bandplan->bands.size();
+    void WaterFall::drawBandPlanRow(bandplan::BandPlan_t *plan, int row) {
+
+        if(plan == nullptr)
+            return;
+        plan->compile_bars();
+
         double horizScale = (double)dataWidth / viewBandwidth;
         double start, end, center, aPos, bPos, cPos, width;
-        ImVec2 txtSz;
         bool startVis, endVis;
-        uint32_t color, colorTrans;
 
-        float height = ImGui::CalcTextSize("0").y * 2.5f;
+	float vertical_extension = 1.5f;
+
+        float height = ImGui::CalcTextSize("0").y * vertical_extension;
         float bpBottom;
 
         if (bandPlanPos == BANDPLAN_POS_BOTTOM) {
-            bpBottom = fftAreaMax.y;
+            bpBottom = fftAreaMax.y - height*row;
         }
         else {
-            bpBottom = fftAreaMin.y + height + 1;
+            bpBottom = fftAreaMin.y + height + 1 + height*row;
         }
 
+        int count = plan->bars.size();
 
         for (int i = 0; i < count; i++) {
-            start = bandplan->bands[i].start;
-            end = bandplan->bands[i].end;
+            auto &bar = plan->bars[i];
+
+            start = bar.start;
+            end = bar.end;
             if (start < lowerFreq && end < lowerFreq) {
                 continue;
             }
@@ -640,15 +648,8 @@ namespace ImGui {
             bPos = fftAreaMin.x + ((end - lowerFreq) * horizScale);
             cPos = fftAreaMin.x + ((center - lowerFreq) * horizScale);
             width = bPos - aPos;
-            txtSz = ImGui::CalcTextSize(bandplan->bands[i].name.c_str());
-            if (bandplan::colorTable.find(bandplan->bands[i].type.c_str()) != bandplan::colorTable.end()) {
-                color = bandplan::colorTable[bandplan->bands[i].type].colorValue;
-                colorTrans = bandplan::colorTable[bandplan->bands[i].type].transColorValue;
-            }
-            else {
-                color = IM_COL32(255, 255, 255, 255);
-                colorTrans = IM_COL32(255, 255, 255, 100);
-            }
+
+
             if (aPos <= fftAreaMin.x) {
                 aPos = fftAreaMin.x + 1;
             }
@@ -656,22 +657,57 @@ namespace ImGui {
                 bPos = fftAreaMin.x + 1;
             }
             if (width >= 1.0) {
-                window->DrawList->AddRectFilled(ImVec2(roundf(aPos), bpBottom - height),
-                                                ImVec2(roundf(bPos), bpBottom), colorTrans);
-                if (startVis) {
-                    window->DrawList->AddLine(ImVec2(roundf(aPos), bpBottom - height - 1),
-                                              ImVec2(roundf(aPos), bpBottom - 1), color, style::uiScale);
-                }
-                if (endVis) {
-                    window->DrawList->AddLine(ImVec2(roundf(bPos), bpBottom - height - 1),
-                                              ImVec2(roundf(bPos), bpBottom - 1), color, style::uiScale);
-                }
+
+                int total_height = height;
+                int total_labels = bar.labels.size();
+                int total_position = bpBottom;
+
+                for(const auto &l : bar.labels) {
+                    uint32_t color, colorTrans;
+
+                    if (bandplan::colorTable.find(l.type.c_str()) != bandplan::colorTable.end()) {
+                        color = bandplan::colorTable[l.type].colorValue;
+                        colorTrans = bandplan::colorTable[l.type].transColorValue;
+                    }
+                    else {
+                        color = IM_COL32(255, 255, 255, 255);
+                        colorTrans = IM_COL32(255, 255, 255, 100);
+                    }
+
+                    int dh = total_height/total_labels;
+
+                    window->DrawList->AddRectFilled(ImVec2(roundf(aPos), total_position - dh),
+                                                    ImVec2(roundf(bPos), total_position), colorTrans);
+
+                    total_position -= dh; 
+                    total_height -= dh;
+                    total_labels -= 1;
+//                if (startVis) {
+ //                   window->DrawList->AddLine(ImVec2(roundf(aPos), bpBottom - height - 1),
+  //                                            ImVec2(roundf(aPos), bpBottom - 1), color, style::uiScale);
+   //             }
+    //            if (endVis) {
+     //               window->DrawList->AddLine(ImVec2(roundf(bPos), bpBottom - height - 1),
+      //                                        ImVec2(roundf(bPos), bpBottom - 1), color, style::uiScale);
+       //         }
+               }
             }
-            if (txtSz.x <= width) {
-                window->DrawList->AddText(ImVec2(cPos - (txtSz.x / 2.0), bpBottom - (height / 2.0f) - (txtSz.y / 2.0f)),
-                                          IM_COL32(255, 255, 255, 255), bandplan->bands[i].name.c_str());
+            if (bar.labels.size() == 1) {
+                ImVec2 txtSz;
+
+                txtSz = ImGui::CalcTextSize(bar.labels[0].name.c_str());
+
+                if(txtSz.x <= width) {
+                    window->DrawList->AddText(ImVec2(cPos - (txtSz.x / 2.0), bpBottom - (height / 2.0f) - (txtSz.y / 2.0f)),
+                                          IM_COL32(255, 255, 255, 255), bar.labels[0].name.c_str());
+                }
             }
         }
+    }
+
+    void WaterFall::drawBandPlan() {
+        drawBandPlanRow(bandplan[0], 0);
+        drawBandPlanRow(bandplan[1], 1);
     }
 
     void WaterFall::updateWaterfallTexture() {
