@@ -103,11 +103,11 @@ namespace ImGui {
                 width = 524288;
             }
 
-            float factor = (float)width / (float)outWidth;
+            double factor = (float)width / (float)outWidth;
             std::cout << width << " " << outWidth << " " << factor << std::endl;
             float sFactor = ceilf(factor);
             float uFactor;
-            float id = offset;
+            double id = offset;
             float maxVal;
             int sId;
             for (int i = 0; i < outWidth; i++) {
