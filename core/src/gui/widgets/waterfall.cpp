@@ -27,14 +27,14 @@ float DEFAULT_COLOR_MAP[][3] = {
 // TODO: Fix this hacky BS
 
 double freq_ranges[] = {
-    1.0, 2.0, 2.5, 5.0,
-    10.0, 20.0, 25.0, 50.0,
-    100.0, 200.0, 250.0, 500.0,
-    1000.0, 2000.0, 2500.0, 5000.0,
-    10000.0, 20000.0, 25000.0, 50000.0,
-    100000.0, 200000.0, 250000.0, 500000.0,
-    1000000.0, 2000000.0, 2500000.0, 5000000.0,
-    10000000.0, 20000000.0, 25000000.0, 50000000.0
+    1.0, 2.0, 5.0,
+    10.0, 20.0, 50.0,
+    100.0, 200.0, 500.0,
+    1000.0, 2000.0, 5000.0,
+    10000.0, 20000.0, 50000.0,
+    100000.0, 200000.0, 500000.0,
+    1000000.0, 2000000.0, 5000000.0,
+    10000000.0, 20000000.0, 50000000.0
 };
 
 inline double findBestRange(double bandwidth, int maxSteps) {
@@ -47,19 +47,25 @@ inline double findBestRange(double bandwidth, int maxSteps) {
 }
 
 inline void printAndScale(double freq, char* buf) {
-    double freqAbs = fabs(freq);
-    if (freqAbs < 1000) {
-        sprintf(buf, "%.6g", freq);
+    uint64_t F = fabs(freq);
+
+    if (F < 1000) {
+        sprintf(buf, "%" PRIu64,
+            F);
+        return;
     }
-    else if (freqAbs < 1000000) {
-        sprintf(buf, "%.6lgK", freq / 1000.0);
+    if (F < 1000000) {
+        sprintf(buf, "%" PRIu64 ".%03" PRIu64,
+            F/1000, F % 1000);
+        return;
     }
-    else if (freqAbs < 1000000000) {
-        sprintf(buf, "%.6lgM", freq / 1000000.0);
+    if (F < 1000000000) {
+        sprintf(buf, "%" PRIu64 ".%03" PRIu64 ".%03" PRIu64,
+            F/1000000, (F / 1000) % 1000, F % 1000);
+        return;
     }
-    else if (freqAbs < 1000000000000) {
-        sprintf(buf, "%.6lgG", freq / 1000000000.0);
-    }
+    sprintf(buf, "%" PRIu64 ".%03" PRIu64 ".%03" PRIu64 ".%03" PRIu64,
+        F/1000000000, (F / 1000000) % 1000, (F / 1000) % 1000, F % 1000);
 }
 
 namespace ImGui {
@@ -528,6 +534,36 @@ namespace ImGui {
         }
     }
 
+    //
+    // what this method is doing:
+    //
+    // a VFO is defined by a center frequency and a bandwidth.  we can draw this:
+    //
+    //     lower ... center ... upper
+    //
+    // where (upper - lower) == bandwidth of VFO, so (center - lower) == bandwidth/2.
+    //
+    // we extend the above by another bandwidth:
+    //
+    //     min ... lower ... center ... upper ... max
+    //
+    // where (max - min) == bandwidth, lower - min == bandwidth/2, etc.
+    //
+    // this method measures the combined power in the [min,lower] and [upper, max]
+    // and calls this the "noise".   it measures the total power in [lower, upper]
+    // and refers to that as the "signal".  the SNR is then the ratio.
+    //
+    // a few things:  the noise estimator depends on the areas outside the VFO to
+    // actually be noise.  this assumption will be violated in crowded conditions.
+    // it may be a useful thing to allow for the definition of a "noise VFO", and
+    // let that be the noise estimate.
+    //
+    // the fft data being processed is given in dbFS, not linear power units.
+    // sadly, the original method would work on dBFS data as if they were linear,
+    // which had the unfortunate effect of enhancing lower powers and other distortions.
+    //
+    // the current version converts to linear power, and back to log for the SNR.
+    //
     bool WaterFall::calculateVFOSignalInfo(float* fftLine, WaterfallVFO* _vfo, float& strength, float& snr) {
         if (fftLine == NULL || fftLines <= 0) { return false; }
 
@@ -536,36 +572,47 @@ namespace ImGui {
         double vfoMinFreq = _vfo->centerOffset - (_vfo->bandwidth / 2.0);
         double vfoMaxFreq = _vfo->centerOffset + (_vfo->bandwidth / 2.0);
         double vfoMaxSizeFreq = _vfo->centerOffset + _vfo->bandwidth;
-        int vfoMinSideOffset = std::clamp<int>(((vfoMinSizeFreq / (wholeBandwidth / 2.0)) * (double)(rawFFTSize / 2)) + (rawFFTSize / 2), 0, rawFFTSize);
-        int vfoMinOffset = std::clamp<int>(((vfoMinFreq / (wholeBandwidth / 2.0)) * (double)(rawFFTSize / 2)) + (rawFFTSize / 2), 0, rawFFTSize);
-        int vfoMaxOffset = std::clamp<int>(((vfoMaxFreq / (wholeBandwidth / 2.0)) * (double)(rawFFTSize / 2)) + (rawFFTSize / 2), 0, rawFFTSize);
-        int vfoMaxSideOffset = std::clamp<int>(((vfoMaxSizeFreq / (wholeBandwidth / 2.0)) * (double)(rawFFTSize / 2)) + (rawFFTSize / 2), 0, rawFFTSize);
 
-        double avg = 0;
-        float max = -INFINITY;
-        int avgCount = 0;
+        auto get_offset = [&](double freq) {
+            return std::clamp<int>(((freq / (wholeBandwidth / 2.0)) * (double)(rawFFTSize / 2)) + (rawFFTSize / 2), 0, rawFFTSize);
 
-        // Calculate Left average
+        };
+
+        int vfoMinSideOffset = get_offset(vfoMinSizeFreq),
+            vfoMinOffset     = get_offset(    vfoMinFreq),
+            vfoMaxOffset     = get_offset(    vfoMaxFreq),
+            vfoMaxSideOffset = get_offset(vfoMaxSizeFreq);
+
+        //
+        // the noise
+        //
+        double noise = 0;
+        int    n_noise = 0;
+
         for (int i = vfoMinSideOffset; i < vfoMinOffset; i++) {
-            avg += fftLine[i];
-            avgCount++;
+            noise += std::exp(fftLine[i]*(M_LN10/10.0));
+            ++n_noise;
         }
 
-        // Calculate Right average
         for (int i = vfoMaxOffset + 1; i < vfoMaxSideOffset; i++) {
-            avg += fftLine[i];
-            avgCount++;
+            noise += std::exp(fftLine[i]*(M_LN10/10.0));
+            ++n_noise;
         }
 
-        avg /= (double)(avgCount);
+        //
+        // now the signal
+        //
+        double signal = 0;
+        int    n_signal = 0;
 
-        // Calculate max
         for (int i = vfoMinOffset; i <= vfoMaxOffset; i++) {
-            if (fftLine[i] > max) { max = fftLine[i]; }
+            signal += std::exp(fftLine[i]*(M_LN10/10.0));
+            ++n_signal;
         }
 
-        strength = max;
-        snr = max - avg;
+        strength = 10.0*std::log10(signal);
+
+        snr = 10.0*std::log10((signal*n_noise)/(noise*n_signal));
 
         return true;
     }
@@ -805,8 +852,8 @@ namespace ImGui {
         wfMin = ImVec2(fftAreaMin.x, freqAreaMax.y + 1);
         wfMax = ImVec2(fftAreaMin.x + dataWidth, wfMin.y + waterfallHeight);
 
-        maxHSteps = dataWidth / (ImGui::CalcTextSize("000.000").x + 10);
-        maxVSteps = fftHeight / (ImGui::CalcTextSize("000.000").y);
+        maxHSteps = dataWidth / (3*ImGui::CalcTextSize("000.000").x); // + 10);
+        maxVSteps = fftHeight / (  ImGui::CalcTextSize("000.000").y);
 
         range = findBestRange(viewBandwidth, maxHSteps);
         vRange = findBestRange(fftMax - fftMin, maxVSteps);
