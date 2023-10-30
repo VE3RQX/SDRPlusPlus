@@ -63,7 +63,7 @@
     { "name": "USB",   "type": "USB",     "start": 14236000, "end": 14350000 },
 
     { "name": "CW",    "type": "CW",      "start": 18068000, "end": 18100000 },
-    { "name": "DG",    "type": "DG",      "start": 18068000, "end": 18100000 },
+    { "name": "DG",    "type": "DG",      "start": 18095000, "end": 18110000 },
     { "name": "USB",   "type": "USB",     "start": 18110000, "end": 18168000 },
 
     { "name": "CW",    "type": "CW",      "start": 21000000, "end": 21080000 },

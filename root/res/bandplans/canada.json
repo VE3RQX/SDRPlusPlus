@@ -217,7 +217,7 @@
     },
     {
       "name": "Aeronautical Mobile",
-      "type": "aviationd",
+      "type": "aviation",
       "start": 15010000,
       "end": 15100000
     },
