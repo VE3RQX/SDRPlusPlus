@@ -7,7 +7,6 @@
 #include <utils/flog.h>
 #include <gui/gui.h>
 #include <gui/style.h>
-#include <iostream>
 
 float DEFAULT_COLOR_MAP[][3] = {
     { 0x00, 0x00, 0x20 },
@@ -577,7 +576,7 @@ namespace ImGui {
         }
         double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
         int drawDataSize;
-        int drawDataStart;
+        float drawDataStart;
         // TODO: Maybe put on the stack for faster alloc?
         float* tempData = new float[dataWidth];
         float pixel;
@@ -901,7 +900,7 @@ namespace ImGui {
         std::lock_guard<std::recursive_mutex> lck(latestFFTMtx);
         double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
         int drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-        int drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
+        float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
 
         if (waterfallVisible) {
             doZoom(latestFFT, dataWidth,

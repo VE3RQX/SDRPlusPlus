@@ -8,8 +8,6 @@
 
 #include <utils/opengl_include_code.h>
 
-#include <iostream>
-
 #define WATERFALL_RESOLUTION 1000000
 
 namespace ImGui {
@@ -94,7 +92,7 @@ namespace ImGui {
 
         //inline void doZoom(int offset, int width, int outWidth, float* data, float* out) {
         inline void doZoom(float *out, int outWidth,
-                        const float *data, int width, int offset) {
+                        const float *data, int width, float offset) {
             // NOTE: REMOVE THAT SHIT, IT'S JUST A HACKY FIX
             if (offset < 0) {
                 offset = 0;
@@ -104,7 +102,6 @@ namespace ImGui {
             }
 
             double factor = (float)width / (float)outWidth;
-            std::cout << width << " " << outWidth << " " << factor << std::endl;
             float sFactor = ceilf(factor);
             float uFactor;
             double id = offset;
