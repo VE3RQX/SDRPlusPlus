@@ -587,7 +587,8 @@ namespace ImGui {
             for (int i = 0; i < count; i++) {
                 drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
                 drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
-                doZoom(drawDataStart, drawDataSize, dataWidth, &rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize], tempData);
+                doZoom(tempData, dataWidth,
+                        &rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize], drawDataSize, drawDataStart);
                 for (int j = 0; j < dataWidth; j++) {
                     pixel = (std::clamp<float>(tempData[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
                     waterfallFb[(i * dataWidth) + j] = waterfallPallet[(int)(pixel * (WATERFALL_RESOLUTION - 1))];
@@ -903,7 +904,8 @@ namespace ImGui {
         int drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
 
         if (waterfallVisible) {
-            doZoom(drawDataStart, drawDataSize, dataWidth, &rawFFTs[currentFFTLine * rawFFTSize], latestFFT);
+            doZoom(latestFFT, dataWidth,
+                    &rawFFTs[currentFFTLine * rawFFTSize], drawDataSize, drawDataStart);
             memmove(&waterfallFb[dataWidth], waterfallFb, dataWidth * (waterfallHeight - 1) * sizeof(uint32_t));
             float pixel;
             float dataRange = waterfallMax - waterfallMin;
@@ -915,7 +917,7 @@ namespace ImGui {
             waterfallUpdate = true;
         }
         else {
-            doZoom(drawDataStart, drawDataSize, dataWidth, rawFFTs, latestFFT);
+            doZoom(latestFFT, dataWidth, rawFFTs, drawDataSize, drawDataStart);
             fftLines = 1;
         }
 
