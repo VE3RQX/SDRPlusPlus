@@ -36,26 +36,38 @@ inline double findBestRange(double bandwidth, int maxSteps) {
     return step;
 }
 
-inline void printAndScale(double freq, char* buf) {
+inline int format_frequency(char *buf, size_t nbuf, double freq) {
     uint64_t F = fabs(freq);
 
-    if (F < 1000) {
-        sprintf(buf, "%" PRIu64,
-            F);
-        return;
-    }
-    if (F < 1000000) {
-        sprintf(buf, "%" PRIu64 ".%03" PRIu64,
-            F/1000, F % 1000);
-        return;
-    }
-    if (F < 1000000000) {
-        sprintf(buf, "%" PRIu64 ".%03" PRIu64 ".%03" PRIu64,
-            F/1000000, (F / 1000) % 1000, F % 1000);
-        return;
-    }
-    sprintf(buf, "%" PRIu64 ".%03" PRIu64 ".%03" PRIu64 ".%03" PRIu64,
-        F/1000000000, (F / 1000000) % 1000, (F / 1000) % 1000, F % 1000);
+    if (F < 1000)
+        return snprintf(buf, nbuf, "%" PRIu64, F);
+
+    if (F < 1000000)
+        return snprintf(buf, nbuf, "%" PRIu64 ".%03" PRIu64,
+                    F/1000, F % 1000);
+
+    if (F < 1000000000)
+        return snprintf(buf, nbuf, "%" PRIu64 ".%03" PRIu64 ".%03" PRIu64,
+                            F/1000000, (F / 1000) % 1000, F % 1000);
+
+    return snprintf(buf, nbuf, "%" PRIu64 ".%03" PRIu64 ".%03" PRIu64 ".%03" PRIu64,
+                            F/1000000000, (F / 1000000) % 1000, (F / 1000) % 1000, F % 1000);
+}
+
+inline int format_bandwidth(char *buf, size_t nbuf, double bandwidth) {
+
+    bandwidth = std::floor(bandwidth);  // ,,, ?
+
+    if (bandwidth < 1000)
+        return snprintf(buf, nbuf, "%g", bandwidth);
+
+    if (bandwidth < 1000000)
+        return snprintf(buf, nbuf, "%gk", bandwidth/1000.0);
+
+    if (bandwidth < 1000000000)
+        return snprintf(buf, nbuf, "%gM", bandwidth/1000000.0);
+
+    return snprintf(buf, nbuf, "%gG", bandwidth/1000000000.0);
 }
 
 namespace ImGui {
@@ -112,20 +124,75 @@ namespace ImGui {
         }
 
         // Horizontal scale
-        double startFreq = ceilf(lowerFreq / range) * range;
-        double horizScale = (double)dataWidth / viewBandwidth;
-        float scaleVOfsset = 7 * style::uiScale;
-        for (double freq = startFreq; freq < upperFreq; freq += range) {
-            double xPos = fftAreaMin.x + ((freq - lowerFreq) * horizScale);
-            window->DrawList->AddLine(ImVec2(roundf(xPos), fftAreaMin.y + 1),
-                                      ImVec2(roundf(xPos), fftAreaMax.y),
-                                      IM_COL32(50, 50, 50, 255), style::uiScale);
-            window->DrawList->AddLine(ImVec2(roundf(xPos), fftAreaMax.y),
-                                      ImVec2(roundf(xPos), fftAreaMax.y + scaleVOfsset),
-                                      text, style::uiScale);
-            printAndScale(freq, buf);
-            ImVec2 txtSz = ImGui::CalcTextSize(buf);
-            window->DrawList->AddText(ImVec2(roundf(xPos - (txtSz.x / 2.0)), fftAreaMax.y + txtSz.y), text, buf);
+
+        double horizScale = (double) dataWidth / viewBandwidth;
+
+        auto horz_project = [&](double f) {
+            return fftAreaMin.x + ((f - lowerFreq) * horizScale);
+        };
+
+        const float   tall_tick = 11 * style::uiScale;
+        const float medium_tick =  7 * style::uiScale;
+        const float  short_tick =  4 * style::uiScale;
+
+        double freq_index = floorf(lowerFreq/range);
+
+        for(;;) {
+            double freq = freq_index*range;
+
+            if(freq >= upperFreq)
+                break;
+            freq_index += 1.0;
+
+            if(freq >= lowerFreq) {
+                double xPos = horz_project(freq);
+
+                //
+                // vertical line in spectrum
+                //
+                window->DrawList->AddLine(ImVec2(roundf(xPos), fftAreaMin.y + 1),
+                                          ImVec2(roundf(xPos), fftAreaMax.y),
+                                              IM_COL32(50, 50, 50, 255), style::uiScale);
+
+                //
+                // tick for frequency label
+                //
+                window->DrawList->AddLine(ImVec2(roundf(xPos), fftAreaMax.y),
+                                          ImVec2(roundf(xPos), fftAreaMax.y + tall_tick),
+                                              text, style::uiScale);
+
+                //
+                // frequency label
+                //
+                format_frequency(buf, sizeof(buf), freq);
+                ImVec2 txtSz = ImGui::CalcTextSize(buf);
+
+                window->DrawList->AddText(ImVec2(roundf(xPos - (txtSz.x / 2.0)), fftAreaMax.y + txtSz.y), text, buf);
+            }
+
+            //
+            // unlabeled ticks between labels
+            //
+            for(int u = 1; u < 10; ++u) {
+                double uf = freq + u*range/10.0;
+
+                if(uf < lowerFreq)
+                    continue;
+
+                if(uf > upperFreq)
+                    break;
+
+                double xPos = horz_project(freq + u*range/10.0);
+
+                //
+                // tick for frequency label
+                //
+                float tick = (u == 5) ? medium_tick : short_tick;
+
+                window->DrawList->AddLine(ImVec2(roundf(xPos), fftAreaMax.y),
+                                          ImVec2(roundf(xPos), fftAreaMax.y + tick),
+                                              text, style::uiScale);
+            }
         }
 
         // Data
@@ -454,10 +521,13 @@ namespace ImGui {
 
                     if (ImGui::GetIO().KeyCtrl) {
                         ImGui::Separator();
-                        printAndScale(_vfo->generalOffset + centerFreq, buf);
+
+                        format_frequency(buf, sizeof(buf), _vfo->generalOffset + centerFreq);
                         ImGui::Text("Frequency: %sHz", buf);
-                        printAndScale(_vfo->bandwidth, buf);
+
+                        format_frequency(buf, sizeof(buf), _vfo->bandwidth);
                         ImGui::Text("Bandwidth: %sHz", buf);
+
                         ImGui::Text("Bandwidth Locked: %s", _vfo->bandwidthLocked ? "Yes" : "No");
 
                         float strength, snr;
