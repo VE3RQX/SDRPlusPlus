@@ -116,7 +116,7 @@ private:
                 sprintf(freq, "%.3lfMHz %s", selectedFreq / 1000000.0, mode);
             }
             else if (selectedFreq >= 1000.0) {
-                sprintf(freq, "%.3lfKHz %s", selectedFreq / 1000.0, mode);
+                sprintf(freq, "%.3lfkHz %s", selectedFreq / 1000.0, mode);
             }
             else {
                 sprintf(freq, "%.3lfHz %s", selectedFreq, mode);
