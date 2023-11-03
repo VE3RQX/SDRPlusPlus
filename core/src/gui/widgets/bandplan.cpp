@@ -26,6 +26,10 @@ namespace bandplan {
             { "start", b.start },
             { "end", b.end },
         };
+        if(b.raster.width > 0)
+            j["raster_width"] = b.raster.width;
+        if(b.raster.step > 0)
+            j["raster_step"] = b.raster.step;
     }
 
     void from_json(const json& j, Band_t& b) {
@@ -33,6 +37,10 @@ namespace bandplan {
         j.at("type").get_to(b.type);
         j.at("start").get_to(b.start);
         j.at("end").get_to(b.end);
+        if(j.contains("raster_width"))
+            j.at("raster_width").get_to(b.raster.width);
+        if(j.contains("raster_skip"))
+            j.at("raster_step").get_to(b.raster.step);
     }
 
     void to_json(json& j, const BandPlan_t& b) {
@@ -112,6 +120,18 @@ namespace bandplan {
         colorTable = table.get<std::map<std::string, BandPlanColor_t>>();
     }
 
+    label_t::label_t(const Band_t *b)
+        : name(b->name)
+    {
+        if (bandplan::colorTable.find(b->type.c_str()) != bandplan::colorTable.end()) {
+            type = bandplan::colorTable[b->type];
+        }
+        else {
+            type.colorValue = IM_COL32(255, 255, 255, 255);
+            type.transColorValue = IM_COL32(255, 255, 255, 100);
+        }
+    }
+
     void BandPlan_t::compile_bars() {
 
         if(!bars.empty())
@@ -129,6 +149,13 @@ namespace bandplan {
             {
             }
 
+            edge_t(bool open, const Band_t &b, double f)
+                : open(open),
+                  frequency(f),
+                  band(&b)
+            {
+            }
+
             bool      open;
             double    frequency;
         const Band_t *band;
@@ -142,8 +169,17 @@ namespace bandplan {
         std::vector<edge_t> edges;
 
         for(auto &b : bands) {
-            edges.push_back(edge_t( true, b));
-            edges.push_back(edge_t(false, b));
+            if(b.raster.width > 0.0) {
+                double step = (b.raster.step <= 0.0) ? b.raster.width : b.raster.step;
+                  
+                for(double freq = b.start; freq < b.end; freq += step) {
+                    edges.push_back(edge_t( true, b, freq));
+                    edges.push_back(edge_t(false, b, freq));
+                }
+            } else {
+                edges.push_back(edge_t( true, b));
+                edges.push_back(edge_t(false, b));
+            }
         }
         std::sort(edges.begin(), edges.end());
 

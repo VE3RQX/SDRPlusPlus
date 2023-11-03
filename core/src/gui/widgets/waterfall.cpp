@@ -719,7 +719,6 @@ namespace ImGui {
 
         double horizScale = (double)dataWidth / viewBandwidth;
         double start, end, center, aPos, bPos, cPos, width;
-        bool startVis, endVis;
 
 	float vertical_extension = 1.5f;
 
@@ -746,8 +745,14 @@ namespace ImGui {
             if (start > upperFreq && end > upperFreq) {
                 continue;
             }
-            startVis = (start > lowerFreq);
-            endVis = (end < upperFreq);
+
+            struct {
+                bool start;
+                bool   end;
+            } visible;
+            visible.start = (start > lowerFreq);
+            visible.end   = (  end < upperFreq);
+
             start = std::clamp<double>(start, lowerFreq, upperFreq);
             end = std::clamp<double>(end, lowerFreq, upperFreq);
             center = (start + end) / 2.0;
@@ -770,34 +775,28 @@ namespace ImGui {
                 int total_position = bpBottom;
 
                 for(const auto &l : bar.labels) {
-                    uint32_t color, colorTrans;
-
-                    if (bandplan::colorTable.find(l.type.c_str()) != bandplan::colorTable.end()) {
-                        color = bandplan::colorTable[l.type].colorValue;
-                        colorTrans = bandplan::colorTable[l.type].transColorValue;
-                    }
-                    else {
-                        color = IM_COL32(255, 255, 255, 255);
-                        colorTrans = IM_COL32(255, 255, 255, 100);
-                    }
+                    auto &type = l.type;
 
                     int dh = total_height/total_labels;
 
                     window->DrawList->AddRectFilled(ImVec2(roundf(aPos), total_position - dh),
-                                                    ImVec2(roundf(bPos), total_position), colorTrans);
+                                                    ImVec2(roundf(bPos), total_position),
+                                                        type.transColorValue);
 
                     total_position -= dh; 
                     total_height -= dh;
                     total_labels -= 1;
-//                if (startVis) {
- //                   window->DrawList->AddLine(ImVec2(roundf(aPos), bpBottom - height - 1),
-  //                                            ImVec2(roundf(aPos), bpBottom - 1), color, style::uiScale);
-   //             }
-    //            if (endVis) {
-     //               window->DrawList->AddLine(ImVec2(roundf(bPos), bpBottom - height - 1),
-      //                                        ImVec2(roundf(bPos), bpBottom - 1), color, style::uiScale);
-       //         }
-               }
+                    if (visible.start && l.visible.start) {
+                        window->DrawList->AddLine(ImVec2(roundf(aPos), total_position - dh),
+                                                  ImVec2(roundf(aPos), total_position),
+                                                      type.colorValue, style::uiScale);
+                    }
+                    if (visible.end && l.visible.end) {
+                        window->DrawList->AddLine(ImVec2(roundf(bPos), total_position - dh),
+                                                  ImVec2(roundf(bPos), total_position),
+                                                      type.colorValue, style::uiScale);
+                    }
+                }
             }
             if (bar.labels.size() == 1) {
                 ImVec2 txtSz;

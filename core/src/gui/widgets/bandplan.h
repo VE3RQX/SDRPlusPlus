@@ -8,23 +8,32 @@ using nlohmann::json;
 
 namespace bandplan {
 
+    struct BandPlanColor_t {
+        uint32_t colorValue;
+        uint32_t transColorValue;
+    };
+
     struct Band_t {
         std::string name;
         std::string type;
         double start;
         double end;
+        struct {
+            double width = 0;
+            double step = 0;
+        } raster;
     };
 
     struct label_t {
 
-        label_t(const Band_t *b)
-            : name(b->name),
-              type(b->type)
-        {
-        }
+        label_t(const Band_t *b);
 
         std::string name;
-        std::string type;
+        BandPlanColor_t type;
+        struct {
+            bool start = false;
+            bool end = false;
+        } visible;
     };
 
     struct bar_t {
@@ -56,11 +65,6 @@ namespace bandplan {
 
     void to_json(json& j, const BandPlan_t& b);
     void from_json(const json& j, BandPlan_t& b);
-
-    struct BandPlanColor_t {
-        uint32_t colorValue;
-        uint32_t transColorValue;
-    };
 
     void to_json(json& j, const BandPlanColor_t& ct);
     void from_json(const json& j, BandPlanColor_t& ct);

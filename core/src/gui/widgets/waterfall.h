@@ -90,7 +90,6 @@ namespace ImGui {
         float* getFFTBuffer();
         void pushFFT();
 
-        //inline void doZoom(int offset, int width, int outWidth, float* data, float* out) {
         inline void doZoom(float *out, int outWidth,
                         const float *data, int width, float offset) {
             // NOTE: REMOVE THAT SHIT, IT'S JUST A HACKY FIX
@@ -102,21 +101,37 @@ namespace ImGui {
             }
 
             double factor = (float)width / (float)outWidth;
-            float sFactor = ceilf(factor);
-            float uFactor;
+
+            //
+            // how many output pixels we can go before hitting
+            // the end of the FFT array
+            //
+            int k = (rawFFTSize - offset)*float(outWidth)/float(width);
+
+            if(k > outWidth)
+                k = outWidth;
+
             double id = offset;
-            float maxVal;
-            int sId;
-            for (int i = 0; i < outWidth; i++) {
-                maxVal = -INFINITY;
-                sId = (int)id;
-                uFactor = (sId + sFactor > rawFFTSize) ? sFactor - ((sId + sFactor) - rawFFTSize) : sFactor;
-                for (int j = 0; j < uFactor; j++) {
-                    if (data[sId + j] > maxVal) { maxVal = data[sId + j]; }
+
+            if(factor <= 1.0) {
+
+                for(int i = 0; i < k; ++i, id += factor)
+                    *out++ = data[(int) id];
+
+            } else {
+
+                for (int i = 0; i < k; ++i) {
+                    double nid = id + factor;
+                    float maxVal = data[(int) id];
+
+                    while(++id < nid)
+                        maxVal = std::max(maxVal, data[(int) id]);
+                    *out++ = maxVal;
+                    id = nid;
                 }
-                out[i] = maxVal;
-                id += factor;
             }
+            while(k++ < outWidth)
+                *out++ = -INFINITY;
         }
 
         void updatePallette(float colors[][3], int colorCount);
