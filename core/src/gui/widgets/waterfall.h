@@ -82,7 +82,6 @@ namespace ImGui {
 
     class WaterFall {
     public:
-        ~WaterFall();
         WaterFall();
 
         void init();
@@ -332,6 +331,7 @@ namespace ImGui {
         float* latestFFT = NULL;
         float* latestFFTHold = NULL;
         float* smoothingBuf = NULL;
+        float* fullUpdateBuf = NULL;
         int currentFFTLine = 0;
         int fftLines = 0;
 
@@ -368,10 +368,5 @@ namespace ImGui {
         ImVec2 mouseDownPos;
 
         ImVec2 lastMousePos;
-
-        struct {
-            int width = 0;
-            float *temp = nullptr;
-        } update;
     };
 };

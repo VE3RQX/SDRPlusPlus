@@ -72,11 +72,6 @@ inline int format_bandwidth(char *buf, size_t nbuf, double bandwidth) {
 
 namespace ImGui {
 
-    WaterFall::~WaterFall()
-    {
-        delete[] update.temp;
-    }
-
     WaterFall::WaterFall() {
         fftMin = -70.0;
         fftMax = 0.0;
@@ -92,6 +87,7 @@ namespace ImGui {
         lastWidgetSize.y = 0;
         latestFFT = new float[dataWidth];
         latestFFTHold = new float[dataWidth];
+        fullUpdateBuf = new float[dataWidth];
         waterfallFb = new uint32_t[1];
 
         viewBandwidth = 1.0;
@@ -693,23 +689,17 @@ namespace ImGui {
         const int drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
         const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
 
-        if(update.width != dataWidth) {
-            delete[] update.temp;
-            update.width = dataWidth;
-            update.temp = new float[dataWidth];
-        }
+        const float dataRange = waterfallMax - waterfallMin;
+        const int count = std::min<float>(waterfallHeight, fftLines);
 
-        // TODO: Maybe put on the stack for faster alloc?
-        float dataRange = waterfallMax - waterfallMin;
-        int count = std::min<float>(waterfallHeight, fftLines);
         if (rawFFTs != NULL && fftLines >= 0) {
             for (int i = 0; i < count; i++) {
 
-                doZoom(update.temp, update.width,
+                doZoom(fullUpdateBuf, dataWidth,
                         &rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize], drawDataSize, drawDataStart);
 
                 for (int j = 0; j < dataWidth; j++) {
-                    float pixel = (std::clamp<float>(update.temp[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
+                    float pixel = (std::clamp<float>(fullUpdateBuf[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
 
                     waterfallFb[(i * dataWidth) + j] = waterfallPallet[(int)(pixel * (WATERFALL_RESOLUTION - 1))];
                 }
@@ -726,7 +716,7 @@ namespace ImGui {
 
     void WaterFall::drawBandPlanRow(bandplan::BandPlan_t *plan, int row) {
 
-        if(plan == nullptr)
+        if(plan == NULL)
             return;
         plan->compile_bars();
 
@@ -884,26 +874,27 @@ namespace ImGui {
             // ==============
         }
 
+        // Reallocate the full-waterfall update buf
+        delete[] fullUpdateBuf;
+        fullUpdateBuf = new float[dataWidth];
+
         // Reallocate display FFT
-        if (latestFFT != NULL) {
-            delete[] latestFFT;
-        }
+        delete[] latestFFT;
         latestFFT = new float[dataWidth];
 
         // Reallocate hold FFT
-        if (latestFFTHold != NULL) {
-            delete[] latestFFTHold;
-        }
+        delete[] latestFFTHold;
         latestFFTHold = new float[dataWidth];
 
         // Reallocate smoothing buffer
+        delete[] smoothingBuf;
         if (fftSmoothing) {
-            if (smoothingBuf) { delete[] smoothingBuf; }
             smoothingBuf = new float[dataWidth];
             for (int i = 0; i < dataWidth; i++) {
                 smoothingBuf[i] = -1000.0f; 
             }
-        }
+        } else
+            smoothingBuf = NULL;
 
         if (waterfallVisible) {
             delete[] waterfallFb;
@@ -1296,8 +1287,7 @@ namespace ImGui {
         std::lock_guard<std::mutex> lck(smoothingBufMtx);
         fftSmoothing = enabled;
 
-        // Free buffer if not null
-        if (smoothingBuf) {delete[] smoothingBuf; }
+        delete[] smoothingBuf;
 
         // If disabled, stop here
         if (!enabled) {
