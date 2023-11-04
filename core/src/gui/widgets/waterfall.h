@@ -82,6 +82,7 @@ namespace ImGui {
 
     class WaterFall {
     public:
+        ~WaterFall();
         WaterFall();
 
         void init();
@@ -119,7 +120,6 @@ namespace ImGui {
                     *out++ = data[(int) id];
 
             } else {
-
                 for (int i = 0; i < k; ++i) {
                     double nid = id + factor;
                     float maxVal = data[(int) id];
@@ -368,5 +368,10 @@ namespace ImGui {
         ImVec2 mouseDownPos;
 
         ImVec2 lastMousePos;
+
+        struct {
+            int width = 0;
+            float *temp = nullptr;
+        } update;
     };
 };

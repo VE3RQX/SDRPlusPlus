@@ -71,6 +71,12 @@ inline int format_bandwidth(char *buf, size_t nbuf, double bandwidth) {
 }
 
 namespace ImGui {
+
+    WaterFall::~WaterFall()
+    {
+        delete[] update.temp;
+    }
+
     WaterFall::WaterFall() {
         fftMin = -70.0;
         fftMax = 0.0;
@@ -412,6 +418,8 @@ namespace ImGui {
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
             double deltax = drag.x - lastDrag;
             lastDrag = drag.x;
+            if(deltax == 0.0)
+                return;
             double viewDelta = deltax * (viewBandwidth / (double)dataWidth);
 
             viewOffset -= viewDelta;
@@ -681,22 +689,28 @@ namespace ImGui {
         if (!waterfallVisible || rawFFTs == NULL) {
             return;
         }
-        double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        int drawDataSize;
-        float drawDataStart;
+        const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
+        const int drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
+        const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
+
+        if(update.width != dataWidth) {
+            delete[] update.temp;
+            update.width = dataWidth;
+            update.temp = new float[dataWidth];
+        }
+
         // TODO: Maybe put on the stack for faster alloc?
-        float* tempData = new float[dataWidth];
-        float pixel;
         float dataRange = waterfallMax - waterfallMin;
         int count = std::min<float>(waterfallHeight, fftLines);
         if (rawFFTs != NULL && fftLines >= 0) {
             for (int i = 0; i < count; i++) {
-                drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-                drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
-                doZoom(tempData, dataWidth,
+
+                doZoom(update.temp, update.width,
                         &rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize], drawDataSize, drawDataStart);
+
                 for (int j = 0; j < dataWidth; j++) {
-                    pixel = (std::clamp<float>(tempData[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
+                    float pixel = (std::clamp<float>(update.temp[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
+
                     waterfallFb[(i * dataWidth) + j] = waterfallPallet[(int)(pixel * (WATERFALL_RESOLUTION - 1))];
                 }
             }
@@ -707,7 +721,6 @@ namespace ImGui {
                 }
             }
         }
-        delete[] tempData;
         waterfallUpdate = true;
     }
 
