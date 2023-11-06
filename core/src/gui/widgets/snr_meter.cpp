@@ -8,7 +8,7 @@
 #include <imgui/imgui_internal.h>
 
 namespace ImGui {
-    void SNRMeter(float val, const ImVec2& size_arg = ImVec2(0, 0)) {
+    void SNRMeter(float snr, const ImVec2& size_arg = ImVec2(0, 0)) {
         ImGuiWindow* window = GetCurrentWindow();
         ImGuiStyle& style = GImGui->Style;
 
@@ -23,20 +23,44 @@ namespace ImGui {
             return;
         }
 
-        val = std::clamp<float>(val, 0, 100);
-        float ratio = size.x / 90;
-        float it = size.x / 9;
-        char buf[32];
+        const int snr_limit = 40;
 
-        window->DrawList->AddRectFilled(min + ImVec2(0, 1), min + ImVec2(roundf((float)val * ratio), 10 * style::uiScale), IM_COL32(0, 136, 255, 255));
-        window->DrawList->AddLine(min, min + ImVec2(0, (10.0f * style::uiScale) - 1), text, style::uiScale);
-        window->DrawList->AddLine(min + ImVec2(0, (10.0f * style::uiScale) - 1), min + ImVec2(size.x + 1, (10.0f * style::uiScale) - 1), text, style::uiScale);
+        snr = std::clamp<float>(snr, 0, snr_limit);
 
-        for (int i = 0; i < 10; i++) {
-            window->DrawList->AddLine(min + ImVec2(roundf((float)i * it), (10.0f * style::uiScale) - 1), min + ImVec2(roundf((float)i * it), (15.0f * style::uiScale) - 1), text, style::uiScale);
-            sprintf(buf, "%d", i * 10);
+        float ratio = size.x / snr_limit;
+
+        window->DrawList->AddRectFilled(min + ImVec2(0, 1),
+                                        min + ImVec2(roundf(snr*ratio), 10 * style::uiScale),
+                                            IM_COL32(0, 136, 255, 255));
+
+        window->DrawList->AddLine(  min,
+                                    min + ImVec2(0, (10.0f * style::uiScale) - 1),
+                                        text, style::uiScale);
+
+        window->DrawList->AddLine(  min + ImVec2(0, (10.0f * style::uiScale) - 1),
+                                    min + ImVec2(size.x + 1, (10.0f * style::uiScale) - 1),
+                                        text, style::uiScale);
+
+        for (int i = 0; i <= snr_limit; i += 5) {
+            auto place = roundf(i*ratio);
+
+            window->DrawList->AddLine(  min + ImVec2(place, (10.0f * style::uiScale) - 1),
+                                        min + ImVec2(place, (15.0f * style::uiScale) - 1),
+                                            text, style::uiScale);
+
+            if((i % 10) != 0)
+                continue;
+
+            char buf[32];
+
+            if(i != snr_limit)
+                snprintf(buf, sizeof(buf), "%d", i);
+            else
+                snprintf(buf, sizeof(buf), "%d dB", i);
             ImVec2 sz = ImGui::CalcTextSize(buf);
-            window->DrawList->AddText(min + ImVec2(roundf(((float)i * it) - (sz.x / 2.0)) + 1, 16.0f * style::uiScale), text, buf);
+
+            window->DrawList->AddText(min + ImVec2(roundf((i*ratio) - (sz.x / 2.0)) + 1, 16.0f * style::uiScale),
+                                        text, buf);
         }
     }
 }
