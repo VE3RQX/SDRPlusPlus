@@ -8,37 +8,46 @@ using nlohmann::json;
 
 namespace bandplan {
 
-    struct BandPlanColor_t {
-        uint32_t colorValue;
-        uint32_t transColorValue;
+    struct raster_t {
+        double width = {};
+        double step = {};
+
+        operator bool() const
+        {
+            return width > 0.0;
+        }
     };
 
-    struct Band_t {
+    struct allocation_t {
         std::string name;
         std::string type;
         double start;
         double end;
-        struct {
-            double width = 0;
-            double step = 0;
-        } raster;
+        raster_t raster;
+    };
+
+    struct color_t {
+        uint32_t value = IM_COL32(255, 255, 255, 255);
+        uint32_t trans = IM_COL32(255, 255, 255, 100);
+    };
+
+    struct visible_t {
+        bool start = false;
+        bool end = false;
     };
 
     struct label_t {
 
-        label_t(const Band_t *b);
+        label_t(const allocation_t *a);
 
         std::string name;
-        BandPlanColor_t type;
-        struct {
-            bool start = false;
-            bool end = false;
-        } visible;
+        color_t	color;
+        visible_t visible;
     };
 
-    struct bar_t {
+    struct band_t {
 
-        bar_t(double start, double end)
+        band_t(double start, double end)
             : start(start), end(end)
         {
         }
@@ -48,8 +57,8 @@ namespace bandplan {
         std::vector<label_t> labels;
     };
 
-    void to_json(json& j, const Band_t& b);
-    void from_json(const json& j, Band_t& b);
+    void to_json(json& j, const allocation_t &b);
+    void from_json(const json& j, allocation_t& b);
 
     struct BandPlan_t {
         std::string name;
@@ -57,17 +66,18 @@ namespace bandplan {
         std::string countryCode;
         std::string authorName;
         std::string authorURL;
-        std::vector<Band_t> bands;
-	std::vector<bar_t> bars;
+        std::vector<allocation_t> allocations;
 
-        void compile_bars();
+        void compile_bands();
+
+	std::vector<band_t> bands;
     };
 
     void to_json(json& j, const BandPlan_t& b);
     void from_json(const json& j, BandPlan_t& b);
 
-    void to_json(json& j, const BandPlanColor_t& ct);
-    void from_json(const json& j, BandPlanColor_t& ct);
+    void to_json(json& j, const color_t& ct);
+    void from_json(const json& j, color_t& ct);
 
     void loadBandPlan(std::string path);
     void loadFromDir(std::string path);
@@ -76,5 +86,5 @@ namespace bandplan {
     extern std::map<std::string, BandPlan_t> bandplans;
     extern std::vector<std::string> bandplanNames;
     extern std::string bandplanNameTxt;
-    extern std::map<std::string, BandPlanColor_t> colorTable;
+    extern std::map<std::string, color_t> colorTable;
 };

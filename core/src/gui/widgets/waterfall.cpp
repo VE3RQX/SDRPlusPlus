@@ -252,7 +252,7 @@ namespace ImGui {
             std::lock_guard<std::mutex> lck(texMtx);
             window->DrawList->AddImage((void*)(intptr_t)textureId, wfMin, wfMax);
         }
-        
+
         ImVec2 mPos = ImGui::GetMousePos();
 
         if (IS_IN_AREA(mPos, wfMin, wfMax) && !gui::mainWindow.lockWaterfallControls && !inputHandled) {
@@ -718,7 +718,7 @@ namespace ImGui {
 
         if(plan == NULL)
             return;
-        plan->compile_bars();
+        plan->compile_bands();
 
         double horizScale = (double)dataWidth / viewBandwidth;
         double start, end, center, aPos, bPos, cPos, width;
@@ -735,10 +735,10 @@ namespace ImGui {
             bpBottom = fftAreaMin.y + height + 1 + height*row;
         }
 
-        int count = plan->bars.size();
+        int count = plan->bands.size();
 
         for (int i = 0; i < count; i++) {
-            auto &bar = plan->bars[i];
+            auto &bar = plan->bands[i];
 
             start = bar.start;
             end = bar.end;
@@ -778,27 +778,28 @@ namespace ImGui {
                 int total_position = bpBottom;
 
                 for(const auto &l : bar.labels) {
-                    auto &type = l.type;
+                    auto &color = l.color;
 
                     int dh = total_height/total_labels;
 
                     window->DrawList->AddRectFilled(ImVec2(roundf(aPos), total_position - dh),
                                                     ImVec2(roundf(bPos), total_position),
-                                                        type.transColorValue);
+                                                        color.trans);
 
-                    total_position -= dh; 
-                    total_height -= dh;
-                    total_labels -= 1;
                     if (visible.start && l.visible.start) {
                         window->DrawList->AddLine(ImVec2(roundf(aPos), total_position - dh),
                                                   ImVec2(roundf(aPos), total_position),
-                                                      type.colorValue, style::uiScale);
+                                                      color.value, style::uiScale);
                     }
                     if (visible.end && l.visible.end) {
                         window->DrawList->AddLine(ImVec2(roundf(bPos), total_position - dh),
                                                   ImVec2(roundf(bPos), total_position),
-                                                      type.colorValue, style::uiScale);
+                                                      color.value, style::uiScale);
                     }
+
+                    total_position -= dh;
+                    total_height -= dh;
+                    total_labels -= 1;
                 }
             }
             if (bar.labels.size() == 1) {
@@ -891,7 +892,7 @@ namespace ImGui {
         if (fftSmoothing) {
             smoothingBuf = new float[dataWidth];
             for (int i = 0; i < dataWidth; i++) {
-                smoothingBuf[i] = -1000.0f; 
+                smoothingBuf[i] = -1000.0f;
             }
         } else
             smoothingBuf = NULL;
