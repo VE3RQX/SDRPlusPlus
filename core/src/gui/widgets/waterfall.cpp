@@ -720,8 +720,7 @@ namespace ImGui {
             return;
         plan->compile_bands();
 
-        double horizScale = (double)dataWidth / viewBandwidth;
-        double start, end, center, aPos, bPos, cPos, width;
+        double horizScale = double(dataWidth) / viewBandwidth;
 
 	float vertical_extension = 1.5f;
 
@@ -740,30 +739,32 @@ namespace ImGui {
         for (int i = 0; i < count; i++) {
             auto &bar = plan->bands[i];
 
-            start = bar.start;
-            end = bar.end;
-            if (start < lowerFreq && end < lowerFreq) {
+            double start = bar.start;
+            double   end = bar.end;
+
+            if (end < lowerFreq)
                 continue;
-            }
-            if (start > upperFreq && end > upperFreq) {
-                continue;
-            }
+            if (start >= upperFreq)
+                break;
 
             struct {
                 bool start;
                 bool   end;
             } visible;
-            visible.start = (start > lowerFreq);
-            visible.end   = (  end < upperFreq);
+            visible.start = (start >= lowerFreq);
+            visible.end   = (  end <  upperFreq);
 
             start = std::clamp<double>(start, lowerFreq, upperFreq);
-            end = std::clamp<double>(end, lowerFreq, upperFreq);
-            center = (start + end) / 2.0;
-            aPos = fftAreaMin.x + ((start - lowerFreq) * horizScale);
-            bPos = fftAreaMin.x + ((end - lowerFreq) * horizScale);
-            cPos = fftAreaMin.x + ((center - lowerFreq) * horizScale);
-            width = bPos - aPos;
+            end   = std::clamp<double>(  end, lowerFreq, upperFreq);
 
+
+            auto project = [&](double f) {
+                return fftAreaMin.x + (f - lowerFreq)*horizScale;
+            };
+
+            double aPos = project(start);
+            double bPos = project(end);
+            double width = bPos - aPos;
 
             if (aPos <= fftAreaMin.x) {
                 aPos = fftAreaMin.x + 1;
@@ -802,8 +803,10 @@ namespace ImGui {
                     total_labels -= 1;
                 }
             }
+
             if (bar.labels.size() == 1) {
                 ImVec2 txtSz;
+                double cPos = project((start + end)/2.0);
 
                 txtSz = ImGui::CalcTextSize(bar.labels[0].name.c_str());
 

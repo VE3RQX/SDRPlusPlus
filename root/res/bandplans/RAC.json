@@ -100,7 +100,7 @@
     { "name": "Beacon","type": "beacon",  "start": 144270000, "end": 144300000 },
     { "name": "",      "type": "guard",   "start": 144300000, "end": 144310000 },
     { "name": "",      "type": "FM",      "start": 144310000, "end": 144500000 },
-    { "name": "Repeater In", "type": "FM","start": 144500000, "end": 144900000 },
+    { "name": "retaepeR", "type": "FM","start": 144500000, "end": 144900000 },
     { "name": "Packet","type": "digital", "start": 144900000, "end": 145100000 },
     { "name": "Repeater", "type": "FM",   "start": 145100000, "end": 145500000 },
     { "name": "ARISS", "type": "satellite", "start": 145500000, "end": 145590000 },
@@ -108,10 +108,10 @@
     { "name": "",       "type": "guard",   "start": 145790000, "end": 145800000 },
     { "name": "satellite", "type": "satellite", "start": 145800000, "end": 146000000 },
     { "name": "", "type": "guard", "start": 146000000, "end": 146010000 },
-    { "name": "Repeater In", "type": "FM", "start": 146010000, "end": 146400000 },
+    { "name": "retaepeR", "type": "FM", "start": 146010000, "end": 146400000 },
     { "name": "simplex", "type": "FM", "start": 146400000, "end": 146595000 },
     { "name": "Repeater", "type": "FM", "start": 146610000, "end": 147400000 },
     { "name": "simplex", "type": "FM", "start": 147400000, "end": 147600000 },
-    { "name": "Repeater In", "type": "FM", "start": 147600000, "end": 148000000 }
+    { "name": "retaepeR", "type": "FM", "start": 147600000, "end": 148000000 }
   ]
 }

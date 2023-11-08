@@ -195,67 +195,109 @@ namespace bandplan {
         // of allocations.  these are gathered up into a band_t
         //
         std::vector<const allocation_t *> active;
-        std::vector<const allocation_t *> last;
-        std::vector<const allocation_t *> next;
+        std::vector<const allocation_t *> opened;
+        std::vector<const allocation_t *> closed;
 
-        for(size_t k = 0; k < edges.size(); ) {	// note: the ++k is done below
+        for(size_t k = 0; k < edges.size(); ) { // note: the ++k is done below
             //
-            // update active allocations at each edge
+            // gather up the changed allocations into opened and closed
             //
             size_t    b = k;
 
+            opened = {};
+            closed = {};
             while(k < edges.size() && edges[b].frequency == edges[k].frequency) {
-                if(!edges[k].open) {
-                    //
-                    // an allocation is ending:  remove from the active list
-                    //
-                    for(size_t l = 0; l < active.size(); ++l) {
-                        if(active[l] == edges[k].allocation) {
-                            active[l] = nullptr;
-                            break;
-                        }
-                    }
-
-                    //
-                    // ... and emphasize the last edge
-                    //
-                    for(size_t l = 0; l < last.size(); ++l)
-                        if(last[l] == edges[k].allocation)
-                            bands.back().labels[l].visible.end = true;
-                } else {
-                    //
-                    // an allocation is beginning: add to the active list
-                    //
-                    for(size_t l = 0; l <= active.size(); ++l) {
-                        if(l == active.size()) {
-                            active.push_back(edges[k].allocation);
-                            break;
-                        }
-                        if(active[l] == nullptr) {
-                            active[l] = edges[k].allocation;
-                            break;
-                        }
-                    }
-                    next.push_back(edges[k].allocation);
-                }
+                if(edges[k].open)
+                    opened.push_back(edges[k].allocation);
+                else
+                    closed.push_back(edges[k].allocation);
                 ++k;
             }
 
             //
-            // the stack of rectangles is a band_t
+            // the active list is in coorespondance to
+            // the bands.back().labels;  we can now
+            // mark the visible.end flag for any active
+            // allocation in the closed list
             //
-            last = {};
+            if(!bands.empty()) {
+                auto &labels = bands.back().labels;
+
+                for(size_t l = 0; l < labels.size(); ++l) {
+                    //
+                    // recall:  active in correspondance to labels
+                    //
+                    auto a = active[l];
+
+                    for(auto c : closed) {
+                        if(c == a) {
+                            labels[l].visible.end = true;
+
+                            //
+                            // remove entry without disturbing
+                            // the correspondance
+                            //
+                            active[l] = nullptr;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            //
+            // we now move the opened to active
+            //
+            size_t w = 0;
+
+            for(auto o : opened) {
+                //
+                // scan for an open slot
+                //
+                for(; w < active.size(); ++w)
+                    if(active[w] == nullptr)
+                        break;
+
+                //
+                // drop in, or append
+                //
+                if(w < active.size())
+                    active[w] = o;
+                else
+                    active.push_back(o);
+            }
+
+            //
+            // remove unfilled entries in active;  since
+            // we know that every entry in active[0:w]
+            // is non-nullptr, we can start from there.
+            //
+            // but we can't be too clever:  if opened
+            // is empty, then w is 0, and it may be
+            // nullptr, so we have to re-test to be
+            // sure:
+            //
+            for(size_t r = w; r < active.size(); ++r)
+                if((active[w] = active[r]) != nullptr)
+                    ++w;
+
+            active.erase(active.begin() + w, active.end());
+
+            //
+            // and make the next entry in bands -- such that it
+            // corresponds to the active list.  we mark all
+            // open edges at this point as well.
+            //
             if(!active.empty() && k < edges.size()) {
                 bands.emplace_back(edges[b].frequency, edges[k].frequency);
 
-                for(const auto &a : active) {
-                    if(a == nullptr)
-                        continue;
+                for(auto a : active) {
                     bands.back().labels.emplace_back(a);
-                    last.push_back(a);
-                    for(auto n : next)
-                        if(n == a)
+                    for(auto o : opened) {
+                        if(o == a) {
                             bands.back().labels.back().visible.start = true;
+                            break;
+                        }
+                    }
                 }
             }
         }
