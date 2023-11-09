@@ -105,24 +105,7 @@ int sdrpp_main(int argc, char* argv[]) {
 
     // ======== DEFAULT CONFIG ========
     json defConfig;
-    defConfig["bandColors"]["CW"] = "#FF0000FF";
-    defConfig["bandColors"]["USB"] = "#00FF00FF";
-    defConfig["bandColors"]["LSB"] = "#00FF00FF";
-    defConfig["bandColors"]["SSTV"] = "#FF00FFFF";
-    defConfig["bandColors"]["DG"] = "#FF00FFFF";
-    defConfig["bandColors"]["FM"] = "#ffff00ff";
-    defConfig["bandColors"]["beacon"] = "#0000ffff";
-    defConfig["bandColors"]["satellite"] = "#007f7fff";
-    defConfig["bandColors"]["amateur"] = "#FF0000FF";
-    defConfig["bandColors"]["aviation"] = "#00FF00FF";
-    defConfig["bandColors"]["broadcast"] = "#0000FFFF";
-    defConfig["bandColors"]["marine"] = "#00FFFFFF";
-    defConfig["bandColors"]["military"] = "#FFFF00FF";
-    defConfig["bandColors"]["fixed"] = "#007f007F";
-    defConfig["bandColors"]["time_signal"] = "#7f007f7f";
-    defConfig["bandColors"]["research"] = "#7f7f007f";
     defConfig["bandPlan"] = "General";
-    defConfig["subBandPlan"] = "";
     defConfig["bandPlanEnabled"] = true;
     defConfig["bandPlanPos"] = 0;
     defConfig["centerTuning"] = false;
@@ -346,7 +329,6 @@ int sdrpp_main(int argc, char* argv[]) {
 
     core::configManager.acquire();
     std::string resDir = core::configManager.conf["resourcesDirectory"];
-    json bandColors = core::configManager.conf["bandColors"];
     core::configManager.release();
 
     // Assert that the resource directory is absolute and check existence
@@ -374,10 +356,6 @@ int sdrpp_main(int argc, char* argv[]) {
     LoadingScreen::show("Loading band plans");
     flog::info("Loading band plans");
     bandplan::loadFromDir(resDir + "/bandplans");
-
-    LoadingScreen::show("Loading band plan colors");
-    flog::info("Loading band plans color table");
-    bandplan::loadColorTable(bandColors);
 
     gui::mainWindow.init();
 

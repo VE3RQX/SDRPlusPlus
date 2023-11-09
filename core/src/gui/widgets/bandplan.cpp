@@ -125,11 +125,23 @@ namespace bandplan {
         }
         bandplans.clear();
         for (const auto& file : std::filesystem::directory_iterator(path)) {
-            std::string path = file.path().generic_string();
+
             if (file.path().extension().generic_string() != ".json") {
                 continue;
             }
-            loadBandPlan(path);
+
+            std::string path = file.path().generic_string();
+
+            if (file.path().filename().generic_string() == "config.json") {
+                json config;
+                std::ifstream is(path);
+
+                is >> config;
+                is.close();
+
+                loadColorTable(config["bandColors"]);
+            } else
+                loadBandPlan(path);
         }
     }
 

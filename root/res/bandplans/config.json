@@ -1,0 +1,20 @@
+{
+    "bandColors": {
+        "CW": "#FF0000FF",
+        "DG": "#FF00FFFF",
+        "FM": "#ffff00ff",
+        "LSB": "#00FF00FF",
+        "SSTV": "#FF00FFFF",
+        "USB": "#00FF00FF",
+        "amateur": "#FF0000FF",
+        "aviation": "#00FF00FF",
+        "beacon": "#0000ffff",
+        "broadcast": "#0000FFFF",
+        "fixed": "#007f007F",
+        "marine": "#00FFFFFF",
+        "military": "#FFFF00FF",
+        "research": "#7f7f007f",
+        "satellite": "#007f7fff",
+        "time_signal": "#7f007f7f"
+    }
+}
