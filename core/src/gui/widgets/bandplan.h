@@ -41,6 +41,7 @@ namespace bandplan {
         label_t(const allocation_t *a);
 
         std::string name;
+        std::string type;
         color_t	color;
         visible_t visible;
     };

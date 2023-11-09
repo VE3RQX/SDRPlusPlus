@@ -783,9 +783,18 @@ namespace ImGui {
 
                     int dh = total_height/total_labels;
 
-                    window->DrawList->AddRectFilled(ImVec2(roundf(aPos), total_position - dh),
-                                                    ImVec2(roundf(bPos), total_position),
-                                                        color.trans);
+                    if(l.type != "guard") {
+                        window->DrawList->AddRectFilled(ImVec2(roundf(aPos), total_position - dh),
+                                                        ImVec2(roundf(bPos), total_position),
+                                                            color.trans);
+                    } else {
+                        window->DrawList->AddLine(ImVec2(roundf(aPos), total_position - dh),
+                                                  ImVec2(roundf(bPos), total_position),
+                                                            color.trans, style::uiScale);
+                        window->DrawList->AddLine(ImVec2(roundf(aPos), total_position),
+                                                  ImVec2(roundf(bPos), total_position - dh),
+                                                            color.trans, style::uiScale);
+                    }
 
                     if (visible.start && l.visible.start) {
                         window->DrawList->AddLine(ImVec2(roundf(aPos), total_position - dh),

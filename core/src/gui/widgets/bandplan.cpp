@@ -150,12 +150,21 @@ namespace bandplan {
     }
 
     label_t::label_t(const allocation_t *a)
-        : name(a->name)
+        : name(a->name),
+          type(a->type)
     {
         if (colorTable.find(a->type.c_str()) != colorTable.end())
             color = bandplan::colorTable[a->type];
         else
             color = {};
+
+        //
+        // force band edges for guard bands
+        //
+        if(a->type == "guard") {
+            visible.start = true;
+            visible.end = true;
+        }
     }
 
     inline static uint32_t dim(uint32_t c) {

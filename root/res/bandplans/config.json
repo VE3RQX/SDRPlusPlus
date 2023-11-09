@@ -1,8 +1,12 @@
 {
     "bandColors": {
         "CW": "#FF0000FF",
+        "weak": "#7F3f7fFF",
         "DG": "#FF00FFFF",
+        "DG:wide": "#cF2fcFFF",
         "FM": "#ffff00ff",
+        "FM:down": "#ff7f2fff",
+        "FM:up": "#ff6f3fff",
         "LSB": "#00FF00FF",
         "SSTV": "#FF00FFFF",
         "USB": "#00FF00FF",
@@ -15,6 +19,7 @@
         "military": "#FFFF00FF",
         "research": "#7f7f007f",
         "satellite": "#007f7fff",
-        "time_signal": "#7f007f7f"
+        "time_signal": "#7f007f7f",
+        "guard": "#ffff00ff"
     }
 }
