@@ -118,7 +118,6 @@
     { "name": "simplex",  "type": "FM",        "start": 146392500, "end": 146602500 },
     { "name": "FM call",  "type": "FM:call",   "start": 146512500, "end": 146527500 },
     { "name": "repeater", "type": "FM:down",   "start": 146602500, "end": 147397500 },
-
     { "name": "simplex",  "type": "FM",        "start": 147412500, "end": 147427500 },
     { "name": "digital",  "type": "DG:wide",   "start": 147427500, "end": 147442500 },
     { "name": "simplex",  "type": "FM",        "start": 147442500, "end": 147457500 },
@@ -131,7 +130,29 @@
     { "name": "digital",  "type": "DG:wide",   "start": 147547500, "end": 147562500 },
     { "name": "simplex",  "type": "FM",        "start": 147562500, "end": 147577500 },
     { "name": "digital",  "type": "DG:wide",   "start": 147577500, "end": 147592500 },
+    { "name": "retaeper", "type": "FM:up",     "start": 147592500, "end": 147997500 },
 
-    { "name": "retaeper", "type": "FM:up",     "start": 147592500, "end": 147997500 }
+    { "name": "digital",  "type": "DG:wide",   "start": 430012500, "end": 431487500 },
+    { "name": "EME",      "type": "weak",      "start": 431487500, "end": 432987500 },
+    { "name": "CW call",  "type": "CW",        "start": 432097000, "end": 432103000 },
+    { "name": "CW",       "type": "CW",        "start": 432103000, "end": 432200000 },
+    { "name": "SSB call", "type": "USB",       "start": 432200000, "end": 432203000 },
+    { "name": "USB",      "type": "USB",       "start": 432203000, "end": 432300000 },
+    { "name": "beacon",   "type": "beacon",    "start": 432300000, "end": 432400000 },
+    { "name": "experimental","type": "USB",    "start": 432400000, "end": 432987500 },
+    { "name": "digital",  "type": "DG:wide",   "start": 432987500, "end": 434787500 },
+    { "name": "linking",  "type": "FM",        "start": 434787500, "end": 434900000 },
+    { "name": "",         "type": "guard",     "start": 434900000, "end": 435000000 },
+    { "name": "satellite","type": "satellite", "start": 435000000, "end": 438000000 },
+    { "name": "ATV",      "type": "ATV",       "start": 438000000, "end": 441987500 },
+    { "name": "repeater", "type": "FM:down",   "start": 441987500, "end": 444987500 },
+    { "name": "links",    "type": "FM",        "start": 444987500, "end": 445787500 },
+    { "name": "digital",  "type": "DG:wide",   "start": 445787500, "end": 445987500 },
+    { "name": "FM call",  "type": "FM:call",   "start": 445987500, "end": 446012500 },
+    { "name": "simplex",  "type": "FM",        "start": 446012500, "end": 446187500 },
+    { "name": "remote",   "type": "FM",        "start": 446187500, "end": 446387500 },
+    { "name": "links",    "type": "FM",        "start": 446387500, "end": 446787500 },
+    { "name": "digital",  "type": "DG:wide",   "start": 446787500, "end": 446987500 },
+    { "name": "retaeper", "type": "FM:up",     "start": 446987500, "end": 449987500 }
   ]
 }
