@@ -686,7 +686,7 @@ namespace ImGui {
             return;
         }
         const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        const int drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
+        const float drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
         const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
 
         const float dataRange = waterfallMax - waterfallMin;
@@ -1021,9 +1021,9 @@ namespace ImGui {
     void WaterFall::pushFFT() {
         if (rawFFTs == NULL) { return; }
         std::lock_guard<std::recursive_mutex> lck(latestFFTMtx);
-        double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        int drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-        float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
+        const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
+        const float drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
+        const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
 
         if (waterfallVisible) {
             doZoom(latestFFT, dataWidth,

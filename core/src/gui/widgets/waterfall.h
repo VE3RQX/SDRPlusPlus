@@ -91,22 +91,22 @@ namespace ImGui {
         void pushFFT();
 
         inline void doZoom(float *out, int outWidth,
-                        const float *data, int width, float offset) {
+                        const float *data, float width, float offset) {
             // NOTE: REMOVE THAT SHIT, IT'S JUST A HACKY FIX
             if (offset < 0) {
                 offset = 0;
             }
-            if (width > 524288) {
-                width = 524288;
+            if (width > 1048576) {
+                width = 1048576;
             }
 
-            double factor = (float)width / (float)outWidth;
+            double factor = width / float(outWidth);
 
             //
             // how many output pixels we can go before hitting
             // the end of the FFT array
             //
-            int k = (rawFFTSize - offset)*float(outWidth)/float(width);
+            int k = (rawFFTSize - offset)*float(outWidth)/width;
 
             if(k > outWidth)
                 k = outWidth;
@@ -115,8 +115,11 @@ namespace ImGui {
 
             if(factor <= 1.0) {
 
-                for(int i = 0; i < k; ++i, id += factor)
-                    *out++ = data[(int) id];
+                uint64_t S = uint64_t(double( width)*4294967296.0/double(outWidth));
+                uint64_t R = uint64_t(double(offset)*4294967296.0);
+
+                for(int i = 0; i < k; ++i, R += S) // id += factor)
+                    *out++ = data[R >> 32]; //(int) id];
 
             } else {
                 for (int i = 0; i < k; ++i) {
