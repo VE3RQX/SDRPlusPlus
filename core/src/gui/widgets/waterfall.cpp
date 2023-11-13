@@ -685,9 +685,8 @@ namespace ImGui {
         if (!waterfallVisible || rawFFTs == NULL) {
             return;
         }
-        const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        const float drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-        const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
+
+        Zoom zoom(*this);
 
         const float dataRange = waterfallMax - waterfallMin;
         const int count = std::min<float>(waterfallHeight, fftLines);
@@ -695,8 +694,7 @@ namespace ImGui {
         if (rawFFTs != NULL && fftLines >= 0) {
             for (int i = 0; i < count; i++) {
 
-                doZoom(fullUpdateBuf, dataWidth,
-                        &rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize], drawDataSize, drawDataStart);
+                zoom(fullUpdateBuf, &rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize]);
 
                 for (int j = 0; j < dataWidth; j++) {
                     float pixel = (std::clamp<float>(fullUpdateBuf[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
@@ -1021,25 +1019,25 @@ namespace ImGui {
     void WaterFall::pushFFT() {
         if (rawFFTs == NULL) { return; }
         std::lock_guard<std::recursive_mutex> lck(latestFFTMtx);
-        const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        const float drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-        const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
+
+        Zoom zoom(*this);
 
         if (waterfallVisible) {
-            doZoom(latestFFT, dataWidth,
-                    &rawFFTs[currentFFTLine * rawFFTSize], drawDataSize, drawDataStart);
+            zoom(latestFFT, &rawFFTs[currentFFTLine * rawFFTSize]);
             memmove(&waterfallFb[dataWidth], waterfallFb, dataWidth * (waterfallHeight - 1) * sizeof(uint32_t));
-            float pixel;
-            float dataRange = waterfallMax - waterfallMin;
+
+            const float dataRange = waterfallMax - waterfallMin;
+
             for (int j = 0; j < dataWidth; j++) {
-                pixel = (std::clamp<float>(latestFFT[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
+                float pixel = (std::clamp<float>(latestFFT[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
                 int id = (int)(pixel * (WATERFALL_RESOLUTION - 1));
+
                 waterfallFb[j] = waterfallPallet[id];
             }
             waterfallUpdate = true;
         }
         else {
-            doZoom(latestFFT, dataWidth, rawFFTs, drawDataSize, drawDataStart);
+            zoom(latestFFT, rawFFTs);
             fftLines = 1;
         }
 

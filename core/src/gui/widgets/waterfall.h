@@ -90,51 +90,6 @@ namespace ImGui {
         float* getFFTBuffer();
         void pushFFT();
 
-        inline void doZoom(float *out, int outWidth,
-                        const float *data, float width, float offset) {
-            // NOTE: REMOVE THAT SHIT, IT'S JUST A HACKY FIX
-            if (offset < 0) {
-                offset = 0;
-            }
-            if (width > 1048576) {
-                width = 1048576;
-            }
-
-            double factor = width / float(outWidth);
-
-            //
-            // how many output pixels we can go before hitting
-            // the end of the FFT array
-            //
-            int k = (rawFFTSize - offset)*float(outWidth)/width;
-
-            if(k > outWidth)
-                k = outWidth;
-
-            double id = offset;
-
-            if(factor <= 1.0) {
-
-                uint64_t S = uint64_t(double( width)*4294967296.0/double(outWidth));
-                uint64_t R = uint64_t(double(offset)*4294967296.0);
-
-                for(int i = 0; i < k; ++i, R += S) // id += factor)
-                    *out++ = data[R >> 32]; //(int) id];
-
-            } else {
-                for (int i = 0; i < k; ++i) {
-                    double nid = id + factor;
-                    float maxVal = data[(int) id];
-
-                    while(++id < nid)
-                        maxVal = std::max(maxVal, data[(int) id]);
-                    *out++ = maxVal;
-                    id = nid;
-                }
-            }
-            while(k++ < outWidth)
-                *out++ = -INFINITY;
-        }
 
         void updatePallette(float colors[][3], int colorCount);
         void updatePalletteFromArray(float* colors, int colorCount);
@@ -265,6 +220,8 @@ namespace ImGui {
         ImVec2 wfMax;
 
     private:
+        friend class Zoom;
+
         void drawWaterfall();
         void drawFFT();
         void drawVFOs();
@@ -371,5 +328,84 @@ namespace ImGui {
         ImVec2 mouseDownPos;
 
         ImVec2 lastMousePos;
+    };
+
+    class Zoom {
+    public:
+
+        Zoom(const WaterFall &wf) {
+
+            double offsetRatio = wf.viewOffset / (wf.wholeBandwidth / 2.0);
+            float width = (wf.viewBandwidth / wf.wholeBandwidth) * wf.rawFFTSize;
+            float offset = (((double)wf.rawFFTSize / 2.0) * (offsetRatio + 1)) - (width / 2);
+
+            outWidth = wf.dataWidth;
+
+            // NOTE: REMOVE THAT SHIT, IT'S JUST A HACKY FIX
+            if (offset < 0) {
+                offset = 0;
+            }
+            if (width > 1048576) {
+                width = 1048576;
+            }
+
+            //
+            // how many output pixels we can go before hitting
+            // the end of the FFT array
+            //
+            margin.left = 0;
+            margin.right = (wf.rawFFTSize - offset)*float(outWidth)/width;
+
+            if(margin.right > outWidth)
+                margin.right = outWidth;
+
+            //
+            // how many FFT bins are in one pixel ... scaled by 2^32
+            //
+            bins_per_pixel = uint64_t(double( width)*4294967296.0/double(outWidth));
+            start_bin      = uint64_t(double(offset)*4294967296.0);
+        }
+
+        inline void operator()(float *view, const float *fft) const {
+
+        static const uint64_t one = 0x100000000ULL;
+
+            uint64_t bin = start_bin;
+
+            for(int i = 0; i < margin.left; ++i)
+                *view++ = -INFINITY;
+
+            if(bins_per_pixel <= one) {
+
+                for(int i = margin.left; i < margin.right; ++i, bin += bins_per_pixel)
+                    *view++ = fft[bin >> 32];
+
+            } else {
+                for (int i = margin.left; i < margin.right; ++i) {
+                    uint64_t next_bin = bin + bins_per_pixel;
+                    float maxVal = fft[bin >> 32];
+
+                    while((bin += one) < next_bin)
+                        maxVal = std::max(maxVal, fft[bin >> 32]);
+                    *view++ = maxVal;
+                    bin = next_bin;
+                }
+            }
+
+            for(int i = margin.right; i < outWidth; ++i)
+                *view++ = -INFINITY;
+         }
+
+    private:
+
+
+        uint64_t bins_per_pixel;
+        uint64_t start_bin;
+
+        struct {
+            int left;
+            int right;
+        } margin;
+        int outWidth;
     };
 };
